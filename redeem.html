@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Your Offer</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono&display=swap" rel="stylesheet" />
+<!-- QR Code generator so staff can scan from customer's screen -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   :root {
     --bg      : #f7f5ff;
@@ -30,20 +32,17 @@
     padding: 24px;
   }
 
-  /* Animated background blobs */
   body::before, body::after {
     content: '';
     position: fixed; border-radius: 50%; filter: blur(80px); opacity: .25; z-index: 0; pointer-events: none;
   }
   body::before {
-    width: 500px; height: 500px;
-    background: var(--accent);
+    width: 500px; height: 500px; background: var(--accent);
     top: -150px; left: -100px;
     animation: float1 8s ease-in-out infinite;
   }
   body::after {
-    width: 400px; height: 400px;
-    background: var(--accent2);
+    width: 400px; height: 400px; background: var(--accent2);
     bottom: -100px; right: -80px;
     animation: float2 10s ease-in-out infinite;
   }
@@ -62,67 +61,53 @@
   @keyframes slideUp { from{transform:translateY(40px);opacity:0} to{transform:translateY(0);opacity:1} }
 
   /* ── Loading ── */
-  #state-loading {
-    padding: 60px 40px;
-    text-align: center;
-  }
+  #state-loading { padding: 60px 40px; text-align: center; }
   .loader {
     width: 48px; height: 48px;
-    border: 3px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    margin: 0 auto 20px;
+    border: 3px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; margin: 0 auto 20px;
     animation: spin .8s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
   #state-loading p { color: var(--muted); font-size: .95rem; }
 
-  /* ── Offer card (active) ── */
+  /* ── Active offer ── */
   #state-active { display: none; }
 
   .offer-header {
     background: linear-gradient(135deg, var(--accent) 0%, #a855f7 100%);
-    padding: 36px 32px 28px;
-    text-align: center;
-    color: white;
+    padding: 32px 28px 24px;
+    text-align: center; color: white;
   }
   .brand-icon {
-    width: 56px; height: 56px; border-radius: 16px;
+    width: 52px; height: 52px; border-radius: 14px;
     background: rgba(255,255,255,.2);
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.6rem;
-    margin: 0 auto 14px;
+    font-size: 1.5rem; margin: 0 auto 12px;
   }
-  .offer-header h1 { font-size: 1.5rem; font-weight: 800; line-height: 1.2; margin-bottom: 8px; }
+  .offer-header h1 { font-size: 1.4rem; font-weight: 800; line-height: 1.2; margin-bottom: 8px; }
   .offer-header .discount-badge {
     display: inline-block;
-    background: rgba(255,255,255,.25);
-    padding: 6px 16px; border-radius: 99px;
-    font-size: 1rem; font-weight: 700;
-    backdrop-filter: blur(4px);
+    background: rgba(255,255,255,.25); backdrop-filter: blur(4px);
+    padding: 5px 14px; border-radius: 99px;
+    font-size: .95rem; font-weight: 700;
   }
 
-  .offer-body { padding: 28px 28px 24px; }
+  .offer-body { padding: 22px 24px 20px; }
 
-  .customer-greeting {
-    font-size: 1rem; font-weight: 700; margin-bottom: 4px;
-  }
-  .offer-desc {
-    color: var(--muted); font-size: .9rem; line-height: 1.6; margin-bottom: 22px;
-  }
+  .customer-greeting { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+  .offer-desc { color: var(--muted); font-size: .88rem; line-height: 1.6; margin-bottom: 18px; }
 
   .meta-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px;
   }
-  .meta-item {
-    background: var(--bg); border-radius: 12px; padding: 14px;
-  }
-  .meta-label { font-size: .72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
-  .meta-value { font-size: .88rem; font-weight: 600; }
+  .meta-item { background: var(--bg); border-radius: 10px; padding: 12px; }
+  .meta-label { font-size: .68rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 3px; }
+  .meta-value { font-size: .85rem; font-weight: 600; }
 
   .status-pill {
     display: inline-flex; align-items: center; gap: 6px;
-    padding: 6px 14px; border-radius: 99px; font-size: .82rem; font-weight: 700;
+    padding: 5px 12px; border-radius: 99px; font-size: .8rem; font-weight: 700;
   }
   .status-pill::before { content: ''; display: block; width: 7px; height: 7px; border-radius: 50%; }
   .pill-active   { background: #e6faf2; color: var(--green); }
@@ -133,59 +118,95 @@
   .pill-expired::before  { background: var(--red); }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 
-  .show-to-staff {
-    border: 2px dashed var(--accent);
-    border-radius: 14px; padding: 16px;
+  /* ── QR Code for staff scanning ── */
+  .staff-qr-section {
+    background: linear-gradient(135deg, #f0ecff, #fdf4ff);
+    border: 2px solid var(--border);
+    border-radius: 18px;
+    padding: 20px;
     text-align: center;
-    color: var(--accent); font-size: .88rem; font-weight: 600;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
   }
-  .show-to-staff .icon { font-size: 1.4rem; margin-bottom: 6px; display: block; }
+  .staff-qr-label {
+    font-size: .72rem; font-weight: 700; color: var(--accent);
+    text-transform: uppercase; letter-spacing: .08em;
+    margin-bottom: 14px;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .staff-qr-label::before,
+  .staff-qr-label::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+  .qr-wrapper {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: white; padding: 10px; border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(108,59,255,.12);
+    margin-bottom: 10px;
+  }
+  /* Override qrcodejs default table styles */
+  .qr-wrapper table { border: none !important; border-collapse: collapse; }
+  .qr-wrapper td    { padding: 0 !important; border: none !important; }
+
+  .staff-qr-hint {
+    font-size: .78rem; color: var(--muted); line-height: 1.5;
+  }
+  .staff-qr-hint strong { color: var(--text); }
+
+  /* brightness tip for screen scanning */
+  .brightness-tip {
+    margin-top: 10px;
+    font-size: .73rem; color: var(--accent);
+    background: rgba(108,59,255,.06);
+    padding: 6px 10px; border-radius: 8px;
+    display: inline-block;
+  }
 
   .offer-id {
-    font-family: 'DM Mono', monospace; font-size: .72rem;
+    font-family: 'DM Mono', monospace; font-size: .7rem;
     color: var(--muted); text-align: center;
-    word-break: break-all; padding: 0 4px;
+    word-break: break-all; padding: 0 4px; margin-top: 8px;
   }
 
-  /* ── Redeemed ── */
+  /* ── Redeemed / Expired ── */
   #state-redeemed { display: none; }
-
-  .result-page {
-    padding: 60px 32px;
-    text-align: center;
-  }
+  .result-page { padding: 56px 28px; text-align: center; }
   .result-icon {
     width: 80px; height: 80px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    font-size: 2.2rem;
-    margin: 0 auto 20px;
+    font-size: 2.2rem; margin: 0 auto 20px;
   }
   .icon-success { background: #e6faf2; }
   .icon-warning { background: #fff0f2; }
-  .result-page h2 { font-size: 1.6rem; font-weight: 800; margin-bottom: 8px; }
-  .result-page p  { color: var(--muted); font-size: .95rem; line-height: 1.6; }
+  .result-page h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; }
+  .result-page p  { color: var(--muted); font-size: .92rem; line-height: 1.6; }
   .result-meta {
-    margin-top: 20px;
-    background: var(--bg); border-radius: 14px; padding: 16px;
-    text-align: left;
+    margin-top: 18px; background: var(--bg); border-radius: 12px; padding: 14px; text-align: left;
   }
-  .result-meta .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: .85rem; }
+  .result-meta .row {
+    display: flex; justify-content: space-between;
+    padding: 6px 0; border-bottom: 1px solid var(--border); font-size: .84rem;
+  }
   .result-meta .row:last-child { border: none; }
   .result-meta .row span:first-child { color: var(--muted); }
-  .result-meta .row span:last-child { font-weight: 600; }
+  .result-meta .row span:last-child  { font-weight: 600; }
 
   /* ── Error ── */
-  #state-error { display: none; padding: 60px 32px; text-align: center; }
+  #state-error {
+    display: none; padding: 56px 28px; text-align: center;
+  }
+  #state-error .err-icon {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: #fff0f2; font-size: 2rem;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+  }
   #state-error h2 { font-size: 1.4rem; font-weight: 800; margin-bottom: 8px; }
-  #state-error p { color: var(--muted); font-size: .9rem; }
+  #state-error p  { color: var(--muted); font-size: .9rem; }
 
   /* ── Footer ── */
   .card-footer {
-    padding: 14px 28px;
-    border-top: 1px solid var(--border);
-    text-align: center;
-    font-size: .75rem; color: var(--muted);
+    padding: 12px 24px; border-top: 1px solid var(--border);
+    text-align: center; font-size: .73rem; color: var(--muted);
   }
 </style>
 </head>
@@ -199,13 +220,14 @@
     <p>Fetching your offer…</p>
   </div>
 
-  <!-- Active Offer -->
+  <!-- ── Active Offer ── -->
   <div id="state-active">
     <div class="offer-header">
       <div class="brand-icon">🎁</div>
       <h1 id="offer-title">Special Offer</h1>
       <div class="discount-badge" id="offer-discount">—</div>
     </div>
+
     <div class="offer-body">
       <div class="customer-greeting" id="customer-name">Hello!</div>
       <p class="offer-desc" id="offer-desc">—</p>
@@ -229,17 +251,24 @@
         </div>
       </div>
 
-      <div class="show-to-staff">
-        <span class="icon">📱</span>
-        Show this screen to the staff at the counter to redeem your offer.
+      <!-- ── QR Code for staff to scan ── -->
+      <div class="staff-qr-section">
+        <div class="staff-qr-label">Scan to Verify</div>
+        <div class="qr-wrapper">
+          <div id="staff-qr-code"></div>
+        </div>
+        <div class="staff-qr-hint">
+          <strong>Staff:</strong> scan this QR code on the verify terminal<br>to load and redeem this offer instantly.
+        </div>
+        <div class="brightness-tip">☀️ Increase screen brightness for easier scanning</div>
       </div>
 
       <div class="offer-id" id="offer-id-full">—</div>
     </div>
-    <div class="card-footer">Scan was recorded • Powered by QROfferSystem</div>
+    <div class="card-footer">Powered by QROfferSystem</div>
   </div>
 
-  <!-- Redeemed / Expired -->
+  <!-- ── Redeemed / Expired ── -->
   <div id="state-redeemed">
     <div class="result-page">
       <div class="result-icon icon-warning" id="redeemed-icon">⚠️</div>
@@ -250,9 +279,9 @@
     <div class="card-footer">QROfferSystem</div>
   </div>
 
-  <!-- Error -->
+  <!-- ── Error ── -->
   <div id="state-error">
-    <div class="result-icon" style="background:#fff0f2;font-size:2rem;margin:0 auto 20px;width:80px;height:80px;display:flex;align-items:center;justify-content:center;border-radius:50%;">❌</div>
+    <div class="err-icon">❌</div>
     <h2 id="error-title">Offer Not Found</h2>
     <p id="error-msg">This QR code is invalid or the offer does not exist.</p>
   </div>
@@ -260,20 +289,21 @@
 </div><!-- /card -->
 
 <script>
-// ── Config: set this to your Apps Script URL ─────────────────
-// The redeem page reads it from the URL hash or window._SCRIPT_URL
-// For GitHub Pages: put your script URL here:
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzrTk8WVbgPTyFtbIN9zoPm5xVWza5B8wkmbix-DYIXre_Kjv8iETT0sY_VVkWC3s4PDg/exec";
-// Or override by adding #scriptUrl=https://... to redeem URL in admin settings
+// ── Config ────────────────────────────────────────────────────
+// IMPORTANT: Replace the empty string below with your Apps Script Web App URL
+// e.g. const SCRIPT_URL = "https://script.google.com/macros/s/XXXX/exec";
+const SCRIPT_URL = window._SCRIPT_URL || "";
 
-// ── Init ─────────────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────────
 (async function init() {
   const params = new URLSearchParams(window.location.search);
   const id     = params.get("id");
 
-  // Resolve script URL: query param → localStorage → hardcoded
   const scriptUrl = params.get("scriptUrl")
-    || (function() { try { return JSON.parse(localStorage.getItem("qrOfferConfig")||"{}").scriptUrl || ""; } catch { return ""; } })()
+    || (function() {
+         try { return JSON.parse(localStorage.getItem("qrOfferConfig") || "{}").scriptUrl || ""; }
+         catch(e) { return ""; }
+       })()
     || SCRIPT_URL;
 
   if (!id) {
@@ -318,15 +348,28 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzrTk8WVbgPTyFtbIN9z
 // ── Render: Active ────────────────────────────────────────────
 function renderActive(o) {
   document.getElementById("offer-title").textContent    = o.offerTitle || "Special Offer";
-  document.getElementById("offer-discount").textContent = o.discount || "Exclusive Deal";
+  document.getElementById("offer-discount").textContent = o.discount   || "Exclusive Deal";
   document.getElementById("customer-name").textContent  = "Hello, " + (o.name || "Valued Customer") + "! 👋";
-  document.getElementById("offer-desc").textContent     = o.offerDesc || "Show this to the staff to redeem.";
+  document.getElementById("offer-desc").textContent     = o.offerDesc  || "Show this to the staff to redeem.";
   document.getElementById("offer-status-badge").innerHTML =
-    `<span class="status-pill pill-active">Active</span>`;
+    '<span class="status-pill pill-active">Active</span>';
   document.getElementById("offer-expires").textContent  = o.expiresAt ? fmtDate(o.expiresAt) : "No expiry";
   document.getElementById("offer-created").textContent  = fmtDate(o.createdAt);
-  document.getElementById("offer-id-short").textContent = o.id ? o.id.substring(0,8) + "…" : "—";
+  document.getElementById("offer-id-short").textContent = o.id ? o.id.substring(0, 8) + "…" : "—";
   document.getElementById("offer-id-full").textContent  = o.id || "—";
+
+  // ── Generate QR code pointing to this same page URL ──
+  // Staff scans this → verify.html auto-loads the offer
+  const qrUrl = window.location.href; // current URL already has ?id=...
+  document.getElementById("staff-qr-code").innerHTML = "";
+  new QRCode(document.getElementById("staff-qr-code"), {
+    text         : qrUrl,
+    width        : 180,
+    height       : 180,
+    colorDark    : "#0e0825",
+    colorLight   : "#ffffff",
+    correctLevel : QRCode.CorrectLevel.H,
+  });
 
   hide("state-loading");
   show("state-active");
@@ -339,11 +382,11 @@ function renderRedeemed(o) {
   document.getElementById("redeemed-title").textContent = "Already Redeemed";
   document.getElementById("redeemed-msg").textContent   =
     "This offer was already redeemed. Each QR code can only be used once.";
-  document.getElementById("redeemed-meta").innerHTML    = metaRows({
-    "Customer"     : o.name,
-    "Offer"        : o.offerTitle,
-    "Discount"     : o.discount,
-    "Redeemed At"  : fmtDate(o.redeemedAt),
+  document.getElementById("redeemed-meta").innerHTML = metaRows({
+    "Customer"    : o.name,
+    "Offer"       : o.offerTitle,
+    "Discount"    : o.discount,
+    "Redeemed At" : fmtDate(o.redeemedAt),
   });
   hide("state-loading");
   show("state-redeemed");
@@ -356,7 +399,7 @@ function renderExpired(o) {
   document.getElementById("redeemed-title").textContent = "Offer Expired";
   document.getElementById("redeemed-msg").textContent   =
     "This offer is no longer valid. The validity period has passed.";
-  document.getElementById("redeemed-meta").innerHTML    = metaRows({
+  document.getElementById("redeemed-meta").innerHTML = metaRows({
     "Customer" : o.name,
     "Offer"    : o.offerTitle,
     "Expired"  : o.expiresAt ? fmtDate(o.expiresAt) : "—",
@@ -372,19 +415,20 @@ function showError(title, msg) {
   hide("state-loading");
   show("state-error");
 }
+
 function show(id) { document.getElementById(id).style.display = "block"; }
-function hide(id) { document.getElementById(id).style.display = "none"; }
+function hide(id) { document.getElementById(id).style.display = "none";  }
 
 function metaRows(obj) {
-  return Object.entries(obj).map(([k,v]) =>
-    `<div class="row"><span>${k}</span><span>${v || "—"}</span></div>`
-  ).join("");
+  return Object.entries(obj).map(function(entry) {
+    return '<div class="row"><span>' + entry[0] + '</span><span>' + (entry[1] || "—") + '</span></div>';
+  }).join("");
 }
 
 function fmtDate(iso) {
   if (!iso) return "—";
   try { return new Date(iso).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }); }
-  catch { return iso; }
+  catch(e) { return iso; }
 }
 </script>
 </body>
