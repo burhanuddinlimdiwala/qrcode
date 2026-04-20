@@ -22,7 +22,9 @@
   .camera-wrap.scanning{border-color:var(--accent);}.camera-wrap.success{border-color:#00ff88;}
   #qr-reader{width:100% !important;border:none !important;padding:0 !important;}
   #qr-reader video{width:100% !important;height:100% !important;object-fit:cover;border-radius:0 !important;}
-  #qr-reader img{display:none !important;}#qr-reader__dashboard{display:none !important;}#qr-reader__scan_region{background:transparent !important;}
+  #qr-reader img{display:none !important;}
+  #qr-reader__dashboard{display:none !important;}
+  #qr-reader__scan_region{background:transparent !important;}
   .scan-overlay{position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;}
   .scan-frame{width:58%;aspect-ratio:1;border:2px solid rgba(79,255,176,.6);border-radius:10px;box-shadow:0 0 0 9999px rgba(0,0,0,.5);position:relative;}
   .sf-tl,.sf-tr,.sf-bl,.sf-br{position:absolute;width:18px;height:18px;border-color:var(--accent);border-style:solid;}
@@ -87,7 +89,7 @@
   .flash-icon{font-size:5rem;}.flash-title{font-size:2rem;font-weight:800;color:var(--accent);}.flash-msg{color:var(--muted);font-size:1rem;}
   #activity-log{margin-top:24px;background:var(--panel);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
   .log-header{padding:12px 18px;border-bottom:1px solid var(--border);font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;display:flex;justify-content:space-between;align-items:center;}
-  .log-clear{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.75rem;transition:color .2s;}.log-clear:hover{color:var(--text);}
+  .log-clear{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.75rem;}.log-clear:hover{color:var(--text);}
   #log-entries{max-height:200px;overflow-y:auto;}
   .log-entry{padding:9px 18px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:12px;font-size:.82rem;animation:appear .2s ease;}
   .log-entry:last-child{border:none;}
@@ -114,13 +116,15 @@
 
 <div class="layout">
 
+  <!-- LEFT PANEL -->
   <div class="left-panel">
 
     <div class="panel-title">Camera QR Scanner</div>
 
+    <!-- Camera viewport -->
     <div class="camera-wrap" id="camera-wrap">
       <div class="cam-ph" id="cam-ph">
-        <div class="icon">📷</div>
+        <div class="icon">&#128247;</div>
         <p>Press "Start Camera" to scan a customer's QR code</p>
       </div>
       <div id="qr-reader"></div>
@@ -133,54 +137,73 @@
       </div>
     </div>
 
+    <!-- Status bar -->
     <div class="scan-status idle" id="scan-status">
       <div class="pulse-dot" id="scan-dot" style="display:none;"></div>
       <span id="scan-status-txt">Camera is off</span>
     </div>
 
+    <!-- Camera buttons -->
     <div class="cam-controls">
-      <button class="btn btn-yellow btn-sm" id="btn-start" onclick="startCamera()" style="flex:1;">📷 Start Camera</button>
+      <button class="btn btn-yellow btn-sm" id="btn-start" onclick="startCamera()" style="flex:1;">&#128247; Start Camera</button>
       <button class="btn btn-ghost  btn-sm" id="btn-stop"  onclick="stopCamera()"  style="flex:1;display:none;">&#9209; Stop</button>
       <button class="btn btn-ghost  btn-sm" id="btn-flip"  onclick="flipCamera()"  style="display:none;" title="Flip camera">&#x1F504;</button>
     </div>
 
     <div class="divider">or enter manually</div>
 
-    <input type="text" id="scan-input" class="scan-input" placeholder="Paste Offer ID or QR URL..." onkeydown="if(event.key==='Enter')lookupOffer()" />
+    <!-- Manual input -->
+    <input type="text" id="scan-input" class="scan-input"
+      placeholder="Paste Offer ID or QR URL..."
+      onkeydown="if(event.key==='Enter')lookupOffer()" />
 
     <button class="btn btn-ghost" onclick="lookupOffer()">&#128269; Look Up Offer</button>
 
-    <button class="btn btn-green" id="btn-redeem" onclick="confirmRedeem()" disabled>&#10003; Redeem This Offer</button>
-    <p style="text-align:center;font-size:.73rem;color:var(--muted);margin-top:-6px;">Only active offers can be redeemed. Irreversible.</p>
+    <!-- Redeem button -->
+    <button class="btn btn-green" id="btn-redeem" onclick="confirmRedeem()" disabled>
+      &#10003; Redeem This Offer
+    </button>
+    <p style="text-align:center;font-size:.73rem;color:var(--muted);margin-top:-6px;">
+      Only active offers can be redeemed. This action is irreversible.
+    </p>
 
+    <!-- Settings -->
     <div class="config-section" style="margin-top:auto;">
       <details>
         <summary>&#9881; Connection Settings</summary>
         <div class="config-body">
           <div>
             <div class="f-label">Apps Script URL</div>
-            <input type="url" id="c-url" class="f-input" placeholder="https://script.google.com/..." oninput="saveConfig()" />
+            <input type="url" id="c-url" class="f-input"
+              placeholder="https://script.google.com/macros/s/XXX/exec"
+              oninput="saveConfig()" />
           </div>
           <div>
             <div class="f-label">Shop Secret Key</div>
-            <input type="password" id="c-secret" class="f-input" placeholder="Your SHOP_SECRET" oninput="saveConfig()" />
+            <input type="password" id="c-secret" class="f-input"
+              placeholder="Your SHOP_SECRET from Code.gs"
+              oninput="saveConfig()" />
           </div>
           <div>
             <div class="f-label">Shop Display Name</div>
-            <input type="text" id="c-shopname" class="f-input" placeholder="My Shop" oninput="saveConfig()" />
+            <input type="text" id="c-shopname" class="f-input"
+              placeholder="My Shop"
+              oninput="saveConfig()" />
           </div>
         </div>
       </details>
     </div>
 
-  </div>
+  </div><!-- /left-panel -->
 
+  <!-- RIGHT PANEL -->
   <div class="right-panel">
     <div class="right-header">
       <h2>Offer Details</h2>
       <p>Scan a QR code or enter an offer ID to view and redeem.</p>
     </div>
 
+    <!-- Offer card (hidden until loaded) -->
     <div id="offer-card">
       <div class="offer-card-inner">
         <div class="oc-header">
@@ -197,34 +220,55 @@
             <span id="oc-status-text">-</span>
           </div>
           <div class="oc-meta">
-            <div class="oc-meta-item"><div class="oc-meta-label">Offer ID</div><div class="oc-meta-value" id="oc-id" style="font-family:'DM Mono',monospace;font-size:.72rem;word-break:break-all;">-</div></div>
-            <div class="oc-meta-item"><div class="oc-meta-label">Created</div><div class="oc-meta-value" id="oc-created">-</div></div>
-            <div class="oc-meta-item"><div class="oc-meta-label">Expires</div><div class="oc-meta-value" id="oc-expires">-</div></div>
-            <div class="oc-meta-item"><div class="oc-meta-label">Email</div><div class="oc-meta-value" id="oc-email">-</div></div>
-            <div class="oc-meta-item"><div class="oc-meta-label">Redeemed At</div><div class="oc-meta-value" id="oc-redeemed-at">-</div></div>
+            <div class="oc-meta-item">
+              <div class="oc-meta-label">Offer ID</div>
+              <div class="oc-meta-value" id="oc-id"
+                style="font-family:'DM Mono',monospace;font-size:.72rem;word-break:break-all;">-</div>
+            </div>
+            <div class="oc-meta-item">
+              <div class="oc-meta-label">Created</div>
+              <div class="oc-meta-value" id="oc-created">-</div>
+            </div>
+            <div class="oc-meta-item">
+              <div class="oc-meta-label">Expires</div>
+              <div class="oc-meta-value" id="oc-expires">-</div>
+            </div>
+            <div class="oc-meta-item">
+              <div class="oc-meta-label">Email</div>
+              <div class="oc-meta-value" id="oc-email">-</div>
+            </div>
+            <div class="oc-meta-item">
+              <div class="oc-meta-label">Redeemed At</div>
+              <div class="oc-meta-value" id="oc-redeemed-at">-</div>
+            </div>
           </div>
           <p id="oc-desc" style="font-size:.88rem;color:var(--muted);line-height:1.6;"></p>
         </div>
       </div>
     </div>
 
+    <!-- Empty state -->
     <div class="empty-right" id="empty-state">
-      <div class="icon">📷</div>
+      <div class="icon">&#128247;</div>
       <h3>Ready to scan</h3>
       <p>Start the camera and point it at a customer's QR code, or paste the offer ID manually.</p>
     </div>
 
+    <!-- Activity log -->
     <div id="activity-log">
       <div class="log-header">
         <span>Activity Log</span>
         <button class="log-clear" onclick="clearLog()">Clear</button>
       </div>
-      <div id="log-entries"><div class="log-empty">No activity yet.</div></div>
+      <div id="log-entries">
+        <div class="log-empty">No activity yet.</div>
+      </div>
     </div>
-  </div>
+  </div><!-- /right-panel -->
 
-</div>
+</div><!-- /layout -->
 
+<!-- Confirm dialog -->
 <div id="confirm-overlay">
   <div class="confirm-box">
     <div class="icon">&#9889;</div>
@@ -237,206 +281,262 @@
   </div>
 </div>
 
+<!-- Success flash -->
 <div id="success-flash">
-  <div class="flash-icon">&#10035;</div>
+  <div class="flash-icon">&#9989;</div>
   <div class="flash-title">Redeemed!</div>
   <div class="flash-msg" id="flash-msg">Offer marked as redeemed.</div>
 </div>
 
 <script>
-var CFG={scriptUrl:"",secret:"",shopName:"My Shop"};
-var currentOffer=null,qrScanner=null,useFront=false,cooldown=false;
+// ── Config ────────────────────────────────────────────────────
+var CFG = { scriptUrl: "", secret: "", shopName: "My Shop" };
+var currentOffer = null;
+var qrScanner    = null;
+var useFront     = false;
+var cooldown     = false;
 
-function loadConfig(){
-  try{
-    var s=JSON.parse(localStorage.getItem("qrOfferConfig")||"{}");
-    CFG=Object.assign(CFG,s);
-    document.getElementById("c-url").value=CFG.scriptUrl||"";
-    document.getElementById("c-secret").value=CFG.secret||"";
-    document.getElementById("c-shopname").value=CFG.shopName||"";
-    document.getElementById("header-shop").textContent=CFG.shopName;
-  }catch(e){}
-  var p=new URLSearchParams(window.location.search);
-  var id=p.get("id");
-  if(id){document.getElementById("scan-input").value=id;lookupOffer();}
+function loadConfig() {
+  try {
+    var s = JSON.parse(localStorage.getItem("qrOfferConfig") || "{}");
+    CFG = Object.assign(CFG, s);
+    document.getElementById("c-url").value      = CFG.scriptUrl || "";
+    document.getElementById("c-secret").value   = CFG.secret    || "";
+    document.getElementById("c-shopname").value = CFG.shopName  || "";
+    document.getElementById("header-shop").textContent = CFG.shopName;
+  } catch(e) {}
+
+  // Pre-fill from URL ?id=
+  var p  = new URLSearchParams(window.location.search);
+  var id = p.get("id");
+  if (id) { document.getElementById("scan-input").value = id; lookupOffer(); }
 }
 
-function saveConfig(){
-  CFG.scriptUrl=document.getElementById("c-url").value.trim();
-  CFG.secret=document.getElementById("c-secret").value.trim();
-  CFG.shopName=document.getElementById("c-shopname").value.trim()||"My Shop";
-  localStorage.setItem("qrOfferConfig",JSON.stringify(CFG));
-  document.getElementById("header-shop").textContent=CFG.shopName;
+function saveConfig() {
+  CFG.scriptUrl = document.getElementById("c-url").value.trim();
+  CFG.secret    = document.getElementById("c-secret").value.trim();
+  CFG.shopName  = document.getElementById("c-shopname").value.trim() || "My Shop";
+  localStorage.setItem("qrOfferConfig", JSON.stringify(CFG));
+  document.getElementById("header-shop").textContent = CFG.shopName;
 }
 
-function startCamera(){
-  document.getElementById("cam-ph").style.display="none";
-  document.getElementById("scan-overlay").style.display="flex";
-  document.getElementById("btn-start").style.display="none";
-  document.getElementById("btn-stop").style.display="flex";
-  document.getElementById("btn-flip").style.display="flex";
+// ── Camera ────────────────────────────────────────────────────
+function startCamera() {
+  document.getElementById("cam-ph").style.display       = "none";
+  document.getElementById("scan-overlay").style.display = "flex";
+  document.getElementById("btn-start").style.display    = "none";
+  document.getElementById("btn-stop").style.display     = "flex";
+  document.getElementById("btn-flip").style.display     = "flex";
   document.getElementById("camera-wrap").classList.add("scanning");
-  setStatus("scanning","Scanning for QR code...");
-  qrScanner=new Html5Qrcode("qr-reader");
-  var facing=useFront?{facingMode:"user"}:{facingMode:{ideal:"environment"}};
-  qrScanner.start(facing,{fps:15,qrbox:{width:200,height:200},aspectRatio:1},onScanned,function(){})
-    .catch(function(err){
-      setStatus("err","Camera error - check permissions");
-      addLog("Camera error: "+err,"red");
-      resetCamUI();
+  setStatus("scanning", "Scanning for QR code...");
+
+  qrScanner = new Html5Qrcode("qr-reader");
+
+  var cfg = { fps: 15, qrbox: { width: 200, height: 200 }, aspectRatio: 1 };
+
+  // ── FIX: use plain string "environment" not {ideal:"environment"} ──
+  var primaryFacing   = useFront ? "user" : "environment";
+  var fallbackFacing  = "user";
+
+  qrScanner.start({ facingMode: primaryFacing }, cfg, onScanned, function() {})
+    .catch(function() {
+      // Primary camera failed — try fallback
+      qrScanner.start({ facingMode: fallbackFacing }, cfg, onScanned, function() {})
+        .catch(function(err2) {
+          setStatus("err", "Camera error — check browser permissions");
+          addLog("Camera error: " + err2, "red");
+          resetCamUI();
+        });
     });
 }
 
-function stopCamera(){
-  if(qrScanner){qrScanner.stop().catch(function(){}).finally(function(){qrScanner=null;});}
+function stopCamera() {
+  if (qrScanner) {
+    qrScanner.stop().catch(function() {}).finally(function() { qrScanner = null; });
+  }
   resetCamUI();
 }
 
-function resetCamUI(){
-  document.getElementById("cam-ph").style.display="flex";
-  document.getElementById("scan-overlay").style.display="none";
-  document.getElementById("btn-start").style.display="flex";
-  document.getElementById("btn-stop").style.display="none";
-  document.getElementById("btn-flip").style.display="none";
-  document.getElementById("camera-wrap").classList.remove("scanning","success");
-  setStatus("idle","Camera is off");
+function resetCamUI() {
+  document.getElementById("cam-ph").style.display       = "flex";
+  document.getElementById("scan-overlay").style.display = "none";
+  document.getElementById("btn-start").style.display    = "flex";
+  document.getElementById("btn-stop").style.display     = "none";
+  document.getElementById("btn-flip").style.display     = "none";
+  document.getElementById("camera-wrap").classList.remove("scanning", "success");
+  setStatus("idle", "Camera is off");
 }
 
-function flipCamera(){
-  useFront=!useFront;
+function flipCamera() {
+  useFront = !useFront;
   stopCamera();
-  setTimeout(startCamera,400);
+  setTimeout(startCamera, 400);
 }
 
-function onScanned(raw){
-  if(cooldown)return;
-  cooldown=true;
+function onScanned(raw) {
+  if (cooldown) return;
+  cooldown = true;
+
   document.getElementById("camera-wrap").classList.remove("scanning");
   document.getElementById("camera-wrap").classList.add("success");
-  setStatus("found","QR detected! Loading offer...");
-  addLog("QR scanned","green");
-  var id=raw.trim();
-  try{var u=new URL(id);id=u.searchParams.get("id")||id;}catch(e){}
-  document.getElementById("scan-input").value=id;
+  setStatus("found", "QR detected! Loading offer...");
+  addLog("QR scanned", "green");
+
+  // Extract offer ID from URL or use raw value
+  var id = raw.trim();
+  try { var u = new URL(id); id = u.searchParams.get("id") || id; } catch(e) {}
+
+  document.getElementById("scan-input").value = id;
   stopCamera();
-  lookupOffer(id).finally(function(){setTimeout(function(){cooldown=false;},3000);});
+
+  lookupOffer(id).finally(function() {
+    setTimeout(function() { cooldown = false; }, 3000);
+  });
 }
 
-function setStatus(type,msg){
-  var el=document.getElementById("scan-status");
-  var dot=document.getElementById("scan-dot");
-  var txt=document.getElementById("scan-status-txt");
-  el.className="scan-status "+type;
-  dot.style.display=(type==="scanning"||type==="found")?"block":"none";
-  txt.textContent=msg;
+function setStatus(type, msg) {
+  document.getElementById("scan-status").className    = "scan-status " + type;
+  document.getElementById("scan-dot").style.display   = (type === "scanning" || type === "found") ? "block" : "none";
+  document.getElementById("scan-status-txt").textContent = msg;
 }
 
-async function apiFetch(params){
-  if(!CFG.scriptUrl)throw new Error("Apps Script URL not configured. Open Connection Settings.");
-  var url=new URL(CFG.scriptUrl);
-  Object.entries(params).forEach(function(kv){url.searchParams.set(kv[0],kv[1]);});
-  var res=await fetch(url.toString());
+// ── API ───────────────────────────────────────────────────────
+async function apiFetch(params) {
+  if (!CFG.scriptUrl) throw new Error("Apps Script URL not configured. Open Connection Settings.");
+  var url = new URL(CFG.scriptUrl);
+  Object.entries(params).forEach(function(kv) { url.searchParams.set(kv[0], kv[1]); });
+  var res = await fetch(url.toString());
   return res.json();
 }
 
-async function lookupOffer(idOverride){
-  var id=idOverride||document.getElementById("scan-input").value.trim();
-  try{var u=new URL(id);id=u.searchParams.get("id")||id;}catch(e){}
-  if(!id){addLog("No ID entered.","yellow");return;}
-  document.getElementById("btn-redeem").disabled=true;
-  document.getElementById("empty-state").style.display="none";
-  try{
-    var data=await apiFetch({action:"getOffer",id:id});
-    if(!data.success||!data.offer){
-      addLog("Lookup failed: "+(data.error||"Unknown"),"red");
-      document.getElementById("offer-card").style.display="none";
-      document.getElementById("empty-state").style.display="flex";
+// ── Look up offer ─────────────────────────────────────────────
+async function lookupOffer(idOverride) {
+  var id = idOverride || document.getElementById("scan-input").value.trim();
+  try { var u = new URL(id); id = u.searchParams.get("id") || id; } catch(e) {}
+  if (!id) { addLog("No ID entered.", "yellow"); return; }
+
+  document.getElementById("btn-redeem").disabled = true;
+  document.getElementById("empty-state").style.display = "none";
+
+  try {
+    var data = await apiFetch({ action: "getOffer", id: id });
+    if (!data.success || !data.offer) {
+      addLog("Lookup failed: " + (data.error || "Unknown"), "red");
+      document.getElementById("offer-card").style.display  = "none";
+      document.getElementById("empty-state").style.display = "flex";
       return;
     }
-    currentOffer=data.offer;
-    renderCard(data.offer,data.status);
-    addLog("Loaded: "+data.offer.offerTitle+" for "+data.offer.name+" ["+data.status+"]",data.status==="active"?"green":"yellow");
-  }catch(e){addLog("Error: "+e.message,"red");}
+    currentOffer = data.offer;
+    renderCard(data.offer, data.status);
+    addLog(
+      "Loaded: " + data.offer.offerTitle + " for " + data.offer.name + " [" + data.status + "]",
+      data.status === "active" ? "green" : "yellow"
+    );
+  } catch(e) { addLog("Error: " + e.message, "red"); }
 }
 
-function renderCard(o,status){
-  document.getElementById("oc-title").textContent=o.offerTitle||"-";
-  document.getElementById("oc-customer").textContent=o.name+(o.email?" ("+o.email+")":"");
-  document.getElementById("oc-discount").textContent=o.discount||"-";
-  document.getElementById("oc-id").textContent=o.id||"-";
-  document.getElementById("oc-created").textContent=fmtDate(o.createdAt);
-  document.getElementById("oc-expires").textContent=o.expiresAt?fmtDate(o.expiresAt):"None";
-  document.getElementById("oc-email").textContent=o.email||"-";
-  document.getElementById("oc-redeemed-at").textContent=o.redeemedAt?fmtDate(o.redeemedAt):"-";
-  document.getElementById("oc-desc").textContent=o.offerDesc||"";
-  var bar=document.getElementById("oc-status-bar");
-  var dot=document.getElementById("oc-status-dot");
-  var txt=document.getElementById("oc-status-text");
-  bar.className="status-bar "+status;
-  var labels={active:"Active - Ready to Redeem",redeemed:"Already Redeemed",expired:"Expired"};
-  var colors={active:"var(--accent)",redeemed:"var(--blue)",expired:"var(--red)"};
-  txt.textContent=labels[status]||status;
-  dot.style.background=colors[status]||"var(--muted)";
-  document.getElementById("offer-card").style.display="block";
-  document.getElementById("btn-redeem").disabled=(status!=="active");
+// ── Render offer card ─────────────────────────────────────────
+function renderCard(o, status) {
+  document.getElementById("oc-title").textContent       = o.offerTitle  || "-";
+  document.getElementById("oc-customer").textContent    = o.name + (o.email ? " (" + o.email + ")" : "");
+  document.getElementById("oc-discount").textContent    = o.discount    || "-";
+  document.getElementById("oc-id").textContent          = o.id          || "-";
+  document.getElementById("oc-created").textContent     = fmtDate(o.createdAt);
+  document.getElementById("oc-expires").textContent     = o.expiresAt   ? fmtDate(o.expiresAt) : "None";
+  document.getElementById("oc-email").textContent       = o.email       || "-";
+  document.getElementById("oc-redeemed-at").textContent = o.redeemedAt  ? fmtDate(o.redeemedAt) : "-";
+  document.getElementById("oc-desc").textContent        = o.offerDesc   || "";
+
+  var labels = { active: "Active - Ready to Redeem", redeemed: "Already Redeemed", expired: "Expired" };
+  var colors = { active: "var(--accent)", redeemed: "var(--blue)", expired: "var(--red)" };
+  document.getElementById("oc-status-bar").className        = "status-bar " + status;
+  document.getElementById("oc-status-text").textContent     = labels[status] || status;
+  document.getElementById("oc-status-dot").style.background = colors[status] || "var(--muted)";
+
+  document.getElementById("offer-card").style.display   = "block";
+  document.getElementById("btn-redeem").disabled = (status !== "active");
 }
 
-function confirmRedeem(){
-  if(!currentOffer||currentOffer.status!=="active")return;
-  document.getElementById("confirm-msg").textContent='Redeem "'+currentOffer.offerTitle+'" for '+currentOffer.name+'? This cannot be undone.';
+// ── Redeem flow ───────────────────────────────────────────────
+function confirmRedeem() {
+  if (!currentOffer || currentOffer.status !== "active") return;
+  document.getElementById("confirm-msg").textContent =
+    'Redeem "' + currentOffer.offerTitle + '" for ' + currentOffer.name + '? This cannot be undone.';
   document.getElementById("confirm-overlay").classList.add("show");
 }
 
-function closeConfirm(){document.getElementById("confirm-overlay").classList.remove("show");}
+function closeConfirm() {
+  document.getElementById("confirm-overlay").classList.remove("show");
+}
 
-async function doRedeem(){
-  if(!currentOffer)return;
-  var btn=document.getElementById("btn-confirm-yes");
-  btn.disabled=true;
-  btn.innerHTML='<span class="spinner" style="border-top-color:#000"></span>';
-  try{
-    var data=await apiFetch({action:"redeemOffer",secret:CFG.secret,id:currentOffer.id});
+async function doRedeem() {
+  if (!currentOffer) return;
+  var btn = document.getElementById("btn-confirm-yes");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="border-top-color:#000"></span>';
+
+  try {
+    var data = await apiFetch({ action: "redeemOffer", secret: CFG.secret, id: currentOffer.id });
     closeConfirm();
-    if(data.success){
-      currentOffer.status="redeemed";
-      renderCard(Object.assign({},currentOffer),"redeemed");
-      addLog("Redeemed: "+currentOffer.offerTitle+" for "+currentOffer.name,"green");
-      var f=document.getElementById("success-flash");
-      document.getElementById("flash-msg").textContent="Offer redeemed for "+currentOffer.name;
+
+    if (data.success) {
+      currentOffer.status = "redeemed";
+      renderCard(Object.assign({}, currentOffer), "redeemed");
+      addLog("Redeemed: " + currentOffer.offerTitle + " for " + currentOffer.name, "green");
+
+      var f = document.getElementById("success-flash");
+      document.getElementById("flash-msg").textContent = "Offer redeemed for " + currentOffer.name;
       f.classList.add("show");
-      setTimeout(function(){f.classList.remove("show");},2500);
-      document.getElementById("btn-redeem").disabled=true;
-      document.getElementById("scan-input").value="";
-    }else{
-      addLog("Failed: "+(data.error||"Unknown"),"red");
-      alert(data.error||"Could not redeem.");
+      setTimeout(function() { f.classList.remove("show"); }, 2500);
+
+      document.getElementById("btn-redeem").disabled      = true;
+      document.getElementById("scan-input").value         = "";
+    } else {
+      addLog("Failed: " + (data.error || "Unknown"), "red");
+      alert(data.error || "Could not redeem offer.");
     }
-  }catch(e){closeConfirm();addLog("Error: "+e.message,"red");}
-  finally{btn.disabled=false;btn.textContent="Yes, Redeem";}
+  } catch(e) {
+    closeConfirm();
+    addLog("Error: " + e.message, "red");
+  } finally {
+    btn.disabled     = false;
+    btn.textContent  = "Yes, Redeem";
+  }
 }
 
-function addLog(msg,type){
-  type=type||"green";
-  var el=document.getElementById("log-entries");
-  var em=el.querySelector(".log-empty");
-  if(em)em.remove();
-  var now=new Date().toLocaleTimeString("en-IN");
-  var entry=document.createElement("div");
-  entry.className="log-entry";
-  entry.innerHTML='<div class="log-dot '+type+'"></div><div class="log-time">'+now+'</div><div class="log-msg">'+msg+'</div>';
+// ── Activity log ──────────────────────────────────────────────
+function addLog(msg, type) {
+  type = type || "green";
+  var el    = document.getElementById("log-entries");
+  var empty = el.querySelector(".log-empty");
+  if (empty) empty.remove();
+
+  var now   = new Date().toLocaleTimeString("en-IN");
+  var entry = document.createElement("div");
+  entry.className = "log-entry";
+  entry.innerHTML =
+    '<div class="log-dot ' + type + '"></div>' +
+    '<div class="log-time">' + now + '</div>' +
+    '<div class="log-msg">'  + msg + '</div>';
   el.prepend(entry);
-  while(el.children.length>50)el.lastChild.remove();
+  while (el.children.length > 50) el.lastChild.remove();
 }
 
-function clearLog(){document.getElementById("log-entries").innerHTML='<div class="log-empty">No activity yet.</div>';}
-
-function fmtDate(iso){
-  if(!iso)return"-";
-  try{return new Date(iso).toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"});}catch(e){return iso;}
+function clearLog() {
+  document.getElementById("log-entries").innerHTML = '<div class="log-empty">No activity yet.</div>';
 }
 
+function fmtDate(iso) {
+  if (!iso) return "-";
+  try { return new Date(iso).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }); }
+  catch(e) { return iso; }
+}
+
+// ── Init ──────────────────────────────────────────────────────
 loadConfig();
-document.getElementById("scan-input").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();lookupOffer();}});
+document.getElementById("scan-input").addEventListener("keydown", function(e) {
+  if (e.key === "Enter") { e.preventDefault(); lookupOffer(); }
+});
 </script>
 </body>
 </html>
