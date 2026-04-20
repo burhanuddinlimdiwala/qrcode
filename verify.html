@@ -5,292 +5,161 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>QR Offer System — Verify &amp; Redeem</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono&display=swap" rel="stylesheet" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <style>
-  :root {
-    --bg     : #0f1117;
-    --panel  : #161821;
-    --card   : #1e2030;
-    --border : #2c2f45;
-    --accent : #4fffb0;
-    --accentd: #00c97a;
-    --red    : #ff4b6e;
-    --yellow : #ffc94a;
-    --blue   : #60a5fa;
-    --text   : #e2e5f0;
-    --muted  : #636880;
-    --r      : 12px;
-  }
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: var(--bg); color: var(--text);
-    font-family: 'Space Grotesk', sans-serif;
-    min-height: 100vh;
-  }
-  /* scanlines aesthetic */
-  body::before {
-    content: '';
-    position: fixed; inset: 0; z-index: 0; pointer-events: none;
-    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.04) 2px, rgba(0,0,0,.04) 4px);
-  }
-
-  header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 16px 32px;
-    background: var(--panel);
-    border-bottom: 1px solid var(--border);
-    position: relative; z-index: 10;
-  }
-  .logo { font-size: 1rem; font-weight: 700; letter-spacing: -.3px; }
-  .logo em { color: var(--accent); font-style: normal; }
-  .header-badge {
-    background: rgba(79,255,176,.1); color: var(--accent);
-    border: 1px solid rgba(79,255,176,.25);
-    padding: 5px 12px; border-radius: 99px;
-    font-size: .75rem; font-weight: 600;
-  }
-  .shop-name { font-size: .85rem; color: var(--muted); }
-
-  .layout {
-    position: relative; z-index: 1;
-    display: grid; grid-template-columns: 400px 1fr; min-height: calc(100vh - 57px);
-  }
-
-  /* ── Left panel ── */
-  .left-panel {
-    background: var(--panel);
-    border-right: 1px solid var(--border);
-    padding: 28px 24px;
-    display: flex; flex-direction: column; gap: 20px;
-  }
-  .panel-title { font-size: .7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 4px; }
-
-  .scan-box {
-    border: 2px dashed var(--border);
-    border-radius: var(--r); padding: 28px 20px;
-    text-align: center; transition: border-color .2s;
-  }
-  .scan-box:focus-within { border-color: var(--accent); }
-  .scan-box .scan-icon { font-size: 2.4rem; margin-bottom: 12px; }
-  .scan-box p { color: var(--muted); font-size: .85rem; margin-bottom: 14px; }
-  .scan-input {
-    width: 100%; background: var(--bg); border: 1px solid var(--border);
-    border-radius: 8px; padding: 12px 14px;
-    color: var(--text); font-family: 'DM Mono', monospace; font-size: .9rem;
-    outline: none; text-align: center; transition: border-color .2s;
-  }
-  .scan-input:focus { border-color: var(--accent); }
-
-  .divider { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: .75rem; }
-  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-
-  .btn {
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    width: 100%; padding: 13px; border-radius: 10px;
-    border: none; cursor: pointer;
-    font-family: 'Space Grotesk', sans-serif; font-size: .95rem; font-weight: 700;
-    transition: all .2s;
-  }
-  .btn-green { background: var(--accent); color: #000; }
-  .btn-green:hover { background: #5fffbc; transform: translateY(-1px); }
-  .btn-red { background: rgba(255,75,110,.15); color: var(--red); border: 1px solid rgba(255,75,110,.25); }
-  .btn-red:hover { background: rgba(255,75,110,.25); }
-  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
-  .btn-ghost:hover { color: var(--text); border-color: var(--text); }
-  .btn:disabled { opacity: .5; cursor: not-allowed; transform: none !important; }
-
-  /* ── Config section (collapsed by default) ── */
-  .config-section details summary {
-    cursor: pointer; font-size: .8rem; color: var(--muted);
-    list-style: none; padding: 10px 0; display: flex; align-items: center; gap: 6px;
-  }
-  .config-section details[open] summary { color: var(--text); }
-  .config-body { padding-top: 12px; display: flex; flex-direction: column; gap: 10px; }
-  .f-label { font-size: .72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
-  .f-input {
-    width: 100%; background: var(--bg); border: 1px solid var(--border);
-    border-radius: 8px; padding: 10px 12px;
-    color: var(--text); font-family: 'DM Mono', monospace; font-size: .82rem;
-    outline: none; transition: border-color .2s;
-  }
-  .f-input:focus { border-color: var(--accent); }
-
-  /* ── Right panel ── */
-  .right-panel { padding: 28px 32px; }
-  .right-header { margin-bottom: 24px; }
-  .right-header h2 { font-size: 1.4rem; font-weight: 700; }
-  .right-header p  { color: var(--muted); font-size: .88rem; margin-top: 4px; }
-
-  /* ── Offer card ── */
-  #offer-card { display: none; }
-
-  .offer-card-inner {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 18px; overflow: hidden; margin-bottom: 20px;
-    animation: appear .3s ease;
-  }
-  @keyframes appear { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-
-  .oc-header {
-    padding: 24px 28px;
-    display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
-  }
-  .oc-header-left h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 6px; }
-  .oc-header-left p  { color: var(--muted); font-size: .88rem; }
-  .discount-tag {
-    background: rgba(79,255,176,.12); color: var(--accent);
-    border: 1px solid rgba(79,255,176,.25);
-    padding: 8px 16px; border-radius: 10px;
-    font-size: 1.1rem; font-weight: 800; white-space: nowrap;
-  }
-
-  .oc-divider { height: 1px; background: var(--border); margin: 0 28px; }
-
-  .oc-body { padding: 20px 28px; }
-  .oc-meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
-  .oc-meta-item { }
-  .oc-meta-label { font-size: .7rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
-  .oc-meta-value { font-size: .88rem; font-weight: 600; }
-
-  .status-bar {
-    display: flex; align-items: center; gap: 10px;
-    padding: 14px 18px; border-radius: 10px; margin-bottom: 20px;
-    font-size: .9rem; font-weight: 600;
-  }
-  .status-bar.active   { background: rgba(79,255,176,.08); color: var(--accent); border: 1px solid rgba(79,255,176,.2); }
-  .status-bar.redeemed { background: rgba(96,165,250,.08); color: var(--blue); border: 1px solid rgba(96,165,250,.2); }
-  .status-bar.expired  { background: rgba(255,75,110,.08); color: var(--red); border: 1px solid rgba(255,75,110,.2); }
-  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-
-  /* ── Confirmation overlay ── */
-  #confirm-overlay {
-    display: none; position: fixed; inset: 0; z-index: 200;
-    background: rgba(0,0,0,.7); backdrop-filter: blur(6px);
-    align-items: center; justify-content: center;
-  }
-  #confirm-overlay.show { display: flex; }
-  .confirm-box {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 20px; padding: 36px; max-width: 380px; width: 90%;
-    text-align: center; animation: appear .3s ease;
-  }
-  .confirm-box .icon { font-size: 3rem; margin-bottom: 16px; }
-  .confirm-box h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 8px; }
-  .confirm-box p { color: var(--muted); font-size: .9rem; margin-bottom: 24px; line-height: 1.6; }
-  .confirm-actions { display: flex; gap: 12px; }
-  .confirm-actions .btn { flex: 1; }
-
-  /* ── Success flash ── */
-  #success-flash {
-    display: none; position: fixed; inset: 0; z-index: 300;
-    background: rgba(0,0,0,.85);
-    align-items: center; justify-content: center; flex-direction: column;
-    text-align: center; gap: 16px;
-    animation: flash .4s ease;
-  }
-  #success-flash.show { display: flex; }
-  @keyframes flash { from{opacity:0} to{opacity:1} }
-  .flash-icon { font-size: 5rem; }
-  .flash-title { font-size: 2rem; font-weight: 800; color: var(--accent); }
-  .flash-msg { color: var(--muted); font-size: 1rem; }
-
-  /* ── Log ── */
-  #activity-log {
-    margin-top: 24px;
-    background: var(--panel); border: 1px solid var(--border);
-    border-radius: var(--r); overflow: hidden;
-  }
-  .log-header {
-    padding: 12px 18px; border-bottom: 1px solid var(--border);
-    font-size: .75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .08em;
-    display: flex; justify-content: space-between; align-items: center;
-  }
-  .log-clear { background: none; border: none; color: var(--muted); cursor: pointer; font-size: .75rem; transition: color .2s; }
-  .log-clear:hover { color: var(--text); }
-  #log-entries { max-height: 220px; overflow-y: auto; }
-  .log-entry {
-    padding: 10px 18px; border-bottom: 1px solid var(--border);
-    display: flex; align-items: flex-start; gap: 12px; font-size: .82rem;
-    animation: appear .2s ease;
-  }
-  .log-entry:last-child { border: none; }
-  .log-time { color: var(--muted); font-family: 'DM Mono', monospace; font-size: .72rem; white-space: nowrap; margin-top: 2px; }
-  .log-msg  { flex: 1; }
-  .log-dot  { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
-  .log-dot.green { background: var(--accent); }
-  .log-dot.red   { background: var(--red); }
-  .log-dot.yellow{ background: var(--yellow); }
-  .log-empty { padding: 20px; text-align: center; color: var(--muted); font-size: .85rem; }
-
-  /* ── Spinner ── */
-  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(0,0,0,.3); border-top-color: #000; border-radius: 50%; animation: spin .6s linear infinite; }
-  @keyframes spin { to{transform:rotate(360deg)} }
-
-  /* ── Empty state ── */
-  .empty-right {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    height: 60vh; text-align: center; color: var(--muted);
-  }
-  .empty-right .icon { font-size: 4rem; margin-bottom: 16px; opacity: .5; }
-  .empty-right h3 { font-size: 1.1rem; font-weight: 600; color: var(--text); margin-bottom: 8px; }
-  .empty-right p { font-size: .88rem; max-width: 280px; line-height: 1.6; }
-
-  @media (max-width: 780px) {
-    .layout { grid-template-columns: 1fr; }
-    .left-panel { border-right: none; border-bottom: 1px solid var(--border); }
-    .right-panel { padding: 20px 16px; }
-    .oc-meta { grid-template-columns: 1fr 1fr; }
-  }
+  :root{--bg:#0f1117;--panel:#161821;--card:#1e2030;--border:#2c2f45;--accent:#4fffb0;--red:#ff4b6e;--yellow:#ffc94a;--blue:#60a5fa;--text:#e2e5f0;--muted:#636880;--r:12px;}
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;min-height:100vh;}
+  body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.04) 2px,rgba(0,0,0,.04) 4px);}
+  header{display:flex;align-items:center;justify-content:space-between;padding:16px 32px;background:var(--panel);border-bottom:1px solid var(--border);position:relative;z-index:10;}
+  .logo{font-size:1rem;font-weight:700;}.logo em{color:var(--accent);font-style:normal;}
+  .header-badge{background:rgba(79,255,176,.1);color:var(--accent);border:1px solid rgba(79,255,176,.25);padding:5px 12px;border-radius:99px;font-size:.75rem;font-weight:600;}
+  .shop-name{font-size:.85rem;color:var(--muted);}
+  .layout{position:relative;z-index:1;display:grid;grid-template-columns:400px 1fr;min-height:calc(100vh - 57px);}
+  .left-panel{background:var(--panel);border-right:1px solid var(--border);padding:20px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;}
+  .panel-title{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;}
+  .camera-wrap{border:2px solid var(--border);border-radius:var(--r);overflow:hidden;background:#000;position:relative;aspect-ratio:1;width:100%;transition:border-color .3s;}
+  .camera-wrap.scanning{border-color:var(--accent);}.camera-wrap.success{border-color:#00ff88;}
+  #qr-reader{width:100% !important;border:none !important;padding:0 !important;}
+  #qr-reader video{width:100% !important;height:100% !important;object-fit:cover;border-radius:0 !important;}
+  #qr-reader img{display:none !important;}#qr-reader__dashboard{display:none !important;}#qr-reader__scan_region{background:transparent !important;}
+  .scan-overlay{position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center;}
+  .scan-frame{width:58%;aspect-ratio:1;border:2px solid rgba(79,255,176,.6);border-radius:10px;box-shadow:0 0 0 9999px rgba(0,0,0,.5);position:relative;}
+  .sf-tl,.sf-tr,.sf-bl,.sf-br{position:absolute;width:18px;height:18px;border-color:var(--accent);border-style:solid;}
+  .sf-tl{top:-2px;left:-2px;border-width:3px 0 0 3px;border-radius:4px 0 0 0;}
+  .sf-tr{top:-2px;right:-2px;border-width:3px 3px 0 0;border-radius:0 4px 0 0;}
+  .sf-bl{bottom:-2px;left:-2px;border-width:0 0 3px 3px;border-radius:0 0 0 4px;}
+  .sf-br{bottom:-2px;right:-2px;border-width:0 3px 3px 0;border-radius:0 0 4px 0;}
+  .laser{position:absolute;left:6%;right:6%;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:laser 2s ease-in-out infinite;box-shadow:0 0 8px var(--accent);border-radius:2px;}
+  @keyframes laser{0%{top:8%}50%{top:88%}100%{top:8%}}
+  .cam-ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:#08090e;}
+  .cam-ph .icon{font-size:2.8rem;opacity:.35;}.cam-ph p{color:var(--muted);font-size:.8rem;text-align:center;padding:0 20px;}
+  .scan-status{padding:9px 13px;border-radius:8px;font-size:.82rem;font-weight:600;display:flex;align-items:center;gap:8px;min-height:38px;}
+  .scan-status.idle{background:var(--card);color:var(--muted);}
+  .scan-status.scanning{background:rgba(79,255,176,.08);color:var(--accent);}
+  .scan-status.found{background:rgba(79,255,176,.15);color:var(--accent);border:1px solid rgba(79,255,176,.3);}
+  .scan-status.err{background:rgba(255,75,110,.08);color:var(--red);}
+  .pulse-dot{width:8px;height:8px;border-radius:50%;background:currentColor;flex-shrink:0;animation:pdot 1.2s infinite;}
+  @keyframes pdot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.7)}}
+  .cam-controls{display:flex;gap:8px;}
+  .divider{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.75rem;}
+  .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
+  .scan-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--text);font-family:'DM Mono',monospace;font-size:.88rem;outline:none;text-align:center;transition:border-color .2s;}
+  .scan-input:focus{border-color:var(--accent);}
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;border-radius:10px;border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:.92rem;font-weight:700;transition:all .2s;}
+  .btn-green{background:var(--accent);color:#000;}.btn-green:hover{background:#5fffbc;transform:translateY(-1px);}
+  .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);}.btn-ghost:hover{color:var(--text);border-color:var(--text);}
+  .btn-yellow{background:rgba(255,201,74,.15);color:var(--yellow);border:1px solid rgba(255,201,74,.25);}.btn-yellow:hover{background:rgba(255,201,74,.25);}
+  .btn:disabled{opacity:.5;cursor:not-allowed;transform:none !important;}.btn-sm{padding:8px 12px;font-size:.8rem;}
+  .config-section details summary{cursor:pointer;font-size:.8rem;color:var(--muted);list-style:none;padding:8px 0;display:flex;align-items:center;gap:6px;}
+  .config-section details[open] summary{color:var(--text);}
+  .config-body{padding-top:10px;display:flex;flex-direction:column;gap:10px;}
+  .f-label{font-size:.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
+  .f-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:.82rem;outline:none;transition:border-color .2s;}
+  .f-input:focus{border-color:var(--accent);}
+  .right-panel{padding:28px 32px;overflow-y:auto;}
+  .right-header{margin-bottom:24px;}.right-header h2{font-size:1.4rem;font-weight:700;}.right-header p{color:var(--muted);font-size:.88rem;margin-top:4px;}
+  #offer-card{display:none;}
+  .offer-card-inner{background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden;margin-bottom:20px;animation:appear .3s ease;}
+  @keyframes appear{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  .oc-header{padding:22px 24px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;}
+  .oc-header-left h3{font-size:1.2rem;font-weight:700;margin-bottom:6px;}.oc-header-left p{color:var(--muted);font-size:.88rem;}
+  .discount-tag{background:rgba(79,255,176,.12);color:var(--accent);border:1px solid rgba(79,255,176,.25);padding:8px 16px;border-radius:10px;font-size:1.1rem;font-weight:800;white-space:nowrap;}
+  .oc-divider{height:1px;background:var(--border);margin:0 24px;}
+  .oc-body{padding:20px 24px;}
+  .oc-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;}
+  .oc-meta-label{font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
+  .oc-meta-value{font-size:.88rem;font-weight:600;}
+  .status-bar{display:flex;align-items:center;gap:10px;padding:13px 16px;border-radius:10px;margin-bottom:18px;font-size:.9rem;font-weight:600;}
+  .status-bar.active{background:rgba(79,255,176,.08);color:var(--accent);border:1px solid rgba(79,255,176,.2);}
+  .status-bar.redeemed{background:rgba(96,165,250,.08);color:var(--blue);border:1px solid rgba(96,165,250,.2);}
+  .status-bar.expired{background:rgba(255,75,110,.08);color:var(--red);border:1px solid rgba(255,75,110,.2);}
+  .status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  #confirm-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);align-items:center;justify-content:center;}
+  #confirm-overlay.show{display:flex;}
+  .confirm-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:36px;max-width:380px;width:90%;text-align:center;animation:appear .3s ease;}
+  .confirm-box .icon{font-size:3rem;margin-bottom:16px;}.confirm-box h3{font-size:1.3rem;font-weight:700;margin-bottom:8px;}
+  .confirm-box p{color:var(--muted);font-size:.9rem;margin-bottom:24px;line-height:1.6;}
+  .confirm-actions{display:flex;gap:12px;}.confirm-actions .btn{flex:1;}
+  #success-flash{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.85);align-items:center;justify-content:center;flex-direction:column;text-align:center;gap:16px;}
+  #success-flash.show{display:flex;animation:flashIn .3s ease;}
+  @keyframes flashIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+  .flash-icon{font-size:5rem;}.flash-title{font-size:2rem;font-weight:800;color:var(--accent);}.flash-msg{color:var(--muted);font-size:1rem;}
+  #activity-log{margin-top:24px;background:var(--panel);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+  .log-header{padding:12px 18px;border-bottom:1px solid var(--border);font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;display:flex;justify-content:space-between;align-items:center;}
+  .log-clear{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.75rem;transition:color .2s;}.log-clear:hover{color:var(--text);}
+  #log-entries{max-height:200px;overflow-y:auto;}
+  .log-entry{padding:9px 18px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:12px;font-size:.82rem;animation:appear .2s ease;}
+  .log-entry:last-child{border:none;}
+  .log-time{color:var(--muted);font-family:'DM Mono',monospace;font-size:.72rem;white-space:nowrap;margin-top:2px;}
+  .log-msg{flex:1;}.log-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+  .log-dot.green{background:var(--accent);}.log-dot.red{background:var(--red);}.log-dot.yellow{background:var(--yellow);}
+  .log-empty{padding:20px;text-align:center;color:var(--muted);font-size:.85rem;}
+  .spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(0,0,0,.3);border-top-color:#000;border-radius:50%;animation:spin .6s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .empty-right{display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;text-align:center;color:var(--muted);}
+  .empty-right .icon{font-size:4rem;margin-bottom:16px;opacity:.5;}
+  .empty-right h3{font-size:1.1rem;font-weight:600;color:var(--text);margin-bottom:8px;}
+  .empty-right p{font-size:.88rem;max-width:280px;line-height:1.6;}
+  @media(max-width:780px){.layout{grid-template-columns:1fr;}.left-panel{border-right:none;border-bottom:1px solid var(--border);}.right-panel{padding:20px 16px;}.oc-meta{grid-template-columns:1fr 1fr;}}
 </style>
 </head>
 <body>
 
 <header>
-  <div class="logo">QR<em>Offer</em> · Verify</div>
+  <div class="logo">QR<em>Offer</em> &middot; Verify</div>
   <div class="header-badge">Staff Panel</div>
   <div class="shop-name" id="header-shop">Shop Terminal</div>
 </header>
 
 <div class="layout">
 
-  <!-- ══════════════ LEFT PANEL ══════════════ -->
   <div class="left-panel">
 
-    <div>
-      <div class="panel-title">Scan or Enter Offer ID</div>
-      <div class="scan-box">
-        <div class="scan-icon">📷</div>
-        <p>Use a USB barcode scanner or paste the Offer ID from the customer's screen</p>
-        <input
-          type="text" id="scan-input" class="scan-input"
-          placeholder="Paste offer ID here…"
-          autofocus
-          onkeydown="if(event.key==='Enter') lookupOffer()"
-        />
+    <div class="panel-title">Camera QR Scanner</div>
+
+    <div class="camera-wrap" id="camera-wrap">
+      <div class="cam-ph" id="cam-ph">
+        <div class="icon">📷</div>
+        <p>Press "Start Camera" to scan a customer's QR code</p>
+      </div>
+      <div id="qr-reader"></div>
+      <div class="scan-overlay" id="scan-overlay" style="display:none;">
+        <div class="scan-frame">
+          <div class="sf-tl"></div><div class="sf-tr"></div>
+          <div class="sf-bl"></div><div class="sf-br"></div>
+          <div class="laser"></div>
+        </div>
       </div>
     </div>
 
-    <button class="btn btn-ghost" onclick="lookupOffer()">🔍 Look Up Offer</button>
-
-    <div class="divider">then</div>
-
-    <div>
-      <button class="btn btn-green" id="btn-redeem" onclick="confirmRedeem()" disabled>
-        ✓ Redeem This Offer
-      </button>
-      <p style="text-align:center;font-size:.75rem;color:var(--muted);margin-top:8px;">
-        Only active offers can be redeemed. This action is irreversible.
-      </p>
+    <div class="scan-status idle" id="scan-status">
+      <div class="pulse-dot" id="scan-dot" style="display:none;"></div>
+      <span id="scan-status-txt">Camera is off</span>
     </div>
 
-    <!-- Config -->
+    <div class="cam-controls">
+      <button class="btn btn-yellow btn-sm" id="btn-start" onclick="startCamera()" style="flex:1;">📷 Start Camera</button>
+      <button class="btn btn-ghost  btn-sm" id="btn-stop"  onclick="stopCamera()"  style="flex:1;display:none;">&#9209; Stop</button>
+      <button class="btn btn-ghost  btn-sm" id="btn-flip"  onclick="flipCamera()"  style="display:none;" title="Flip camera">&#x1F504;</button>
+    </div>
+
+    <div class="divider">or enter manually</div>
+
+    <input type="text" id="scan-input" class="scan-input" placeholder="Paste Offer ID or QR URL..." onkeydown="if(event.key==='Enter')lookupOffer()" />
+
+    <button class="btn btn-ghost" onclick="lookupOffer()">&#128269; Look Up Offer</button>
+
+    <button class="btn btn-green" id="btn-redeem" onclick="confirmRedeem()" disabled>&#10003; Redeem This Offer</button>
+    <p style="text-align:center;font-size:.73rem;color:var(--muted);margin-top:-6px;">Only active offers can be redeemed. Irreversible.</p>
+
     <div class="config-section" style="margin-top:auto;">
       <details>
-        <summary>⚙ Connection Settings</summary>
+        <summary>&#9881; Connection Settings</summary>
         <div class="config-body">
           <div>
             <div class="f-label">Apps Script URL</div>
-            <input type="url" id="c-url" class="f-input" placeholder="https://script.google.com/…" oninput="saveConfig()" />
+            <input type="url" id="c-url" class="f-input" placeholder="https://script.google.com/..." oninput="saveConfig()" />
           </div>
           <div>
             <div class="f-label">Shop Secret Key</div>
@@ -304,86 +173,63 @@
       </details>
     </div>
 
-  </div><!-- /left-panel -->
+  </div>
 
-  <!-- ══════════════ RIGHT PANEL ══════════════ -->
   <div class="right-panel">
     <div class="right-header">
       <h2>Offer Details</h2>
-      <p>Look up an offer to view details and redeem it.</p>
+      <p>Scan a QR code or enter an offer ID to view and redeem.</p>
     </div>
 
-    <!-- Offer card (shown after lookup) -->
     <div id="offer-card">
       <div class="offer-card-inner">
         <div class="oc-header">
           <div class="oc-header-left">
-            <h3 id="oc-title">—</h3>
-            <p id="oc-customer">—</p>
+            <h3 id="oc-title">-</h3>
+            <p id="oc-customer">-</p>
           </div>
-          <div class="discount-tag" id="oc-discount">—</div>
+          <div class="discount-tag" id="oc-discount">-</div>
         </div>
         <div class="oc-divider"></div>
         <div class="oc-body">
           <div class="status-bar" id="oc-status-bar">
             <div class="status-dot" id="oc-status-dot"></div>
-            <span id="oc-status-text">—</span>
+            <span id="oc-status-text">-</span>
           </div>
           <div class="oc-meta">
-            <div class="oc-meta-item">
-              <div class="oc-meta-label">Offer ID</div>
-              <div class="oc-meta-value" id="oc-id" style="font-family:'DM Mono',monospace;font-size:.75rem;word-break:break-all;">—</div>
-            </div>
-            <div class="oc-meta-item">
-              <div class="oc-meta-label">Created</div>
-              <div class="oc-meta-value" id="oc-created">—</div>
-            </div>
-            <div class="oc-meta-item">
-              <div class="oc-meta-label">Expires</div>
-              <div class="oc-meta-value" id="oc-expires">—</div>
-            </div>
-            <div class="oc-meta-item">
-              <div class="oc-meta-label">Email</div>
-              <div class="oc-meta-value" id="oc-email">—</div>
-            </div>
-            <div class="oc-meta-item">
-              <div class="oc-meta-label">Redeemed At</div>
-              <div class="oc-meta-value" id="oc-redeemed-at">—</div>
-            </div>
+            <div class="oc-meta-item"><div class="oc-meta-label">Offer ID</div><div class="oc-meta-value" id="oc-id" style="font-family:'DM Mono',monospace;font-size:.72rem;word-break:break-all;">-</div></div>
+            <div class="oc-meta-item"><div class="oc-meta-label">Created</div><div class="oc-meta-value" id="oc-created">-</div></div>
+            <div class="oc-meta-item"><div class="oc-meta-label">Expires</div><div class="oc-meta-value" id="oc-expires">-</div></div>
+            <div class="oc-meta-item"><div class="oc-meta-label">Email</div><div class="oc-meta-value" id="oc-email">-</div></div>
+            <div class="oc-meta-item"><div class="oc-meta-label">Redeemed At</div><div class="oc-meta-value" id="oc-redeemed-at">-</div></div>
           </div>
           <p id="oc-desc" style="font-size:.88rem;color:var(--muted);line-height:1.6;"></p>
         </div>
       </div>
     </div>
 
-    <!-- Empty state -->
     <div class="empty-right" id="empty-state">
-      <div class="icon">🔍</div>
-      <h3>No offer loaded</h3>
-      <p>Enter a customer's offer ID in the left panel and click Look Up Offer.</p>
+      <div class="icon">📷</div>
+      <h3>Ready to scan</h3>
+      <p>Start the camera and point it at a customer's QR code, or paste the offer ID manually.</p>
     </div>
 
-    <!-- Activity log -->
     <div id="activity-log">
       <div class="log-header">
         <span>Activity Log</span>
         <button class="log-clear" onclick="clearLog()">Clear</button>
       </div>
-      <div id="log-entries">
-        <div class="log-empty">No activity yet.</div>
-      </div>
+      <div id="log-entries"><div class="log-empty">No activity yet.</div></div>
     </div>
+  </div>
 
-  </div><!-- /right-panel -->
+</div>
 
-</div><!-- /layout -->
-
-<!-- Confirmation dialog -->
 <div id="confirm-overlay">
   <div class="confirm-box">
-    <div class="icon">⚡</div>
+    <div class="icon">&#9889;</div>
     <h3>Redeem this offer?</h3>
-    <p id="confirm-msg">Once redeemed, this offer cannot be used again. Confirm you are applying it for the customer.</p>
+    <p id="confirm-msg">Once redeemed, this offer cannot be used again.</p>
     <div class="confirm-actions">
       <button class="btn btn-ghost" onclick="closeConfirm()">Cancel</button>
       <button class="btn btn-green" id="btn-confirm-yes" onclick="doRedeem()">Yes, Redeem</button>
@@ -391,208 +237,206 @@
   </div>
 </div>
 
-<!-- Success flash -->
 <div id="success-flash">
-  <div class="flash-icon">✅</div>
+  <div class="flash-icon">&#10035;</div>
   <div class="flash-title">Redeemed!</div>
-  <div class="flash-msg" id="flash-msg">Offer has been marked as redeemed.</div>
+  <div class="flash-msg" id="flash-msg">Offer marked as redeemed.</div>
 </div>
 
 <script>
-// ── Config ───────────────────────────────────────────────────
-let CFG = { scriptUrl: "", secret: "", shopName: "My Shop" };
-let currentOffer = null;
+var CFG={scriptUrl:"",secret:"",shopName:"My Shop"};
+var currentOffer=null,qrScanner=null,useFront=false,cooldown=false;
 
-function loadConfig() {
-  try {
-    const s = JSON.parse(localStorage.getItem("qrOfferConfig") || "{}");
-    CFG.scriptUrl = s.scriptUrl || "";
-    CFG.secret    = s.secret    || "";
-    CFG.shopName  = s.shopName  || "My Shop";
-    document.getElementById("c-url").value      = CFG.scriptUrl;
-    document.getElementById("c-secret").value   = CFG.secret;
-    document.getElementById("c-shopname").value = CFG.shopName;
-    document.getElementById("header-shop").textContent = CFG.shopName;
-  } catch(e) {}
-
-  // Pre-fill from URL ?id=
-  const params = new URLSearchParams(window.location.search);
-  const id = params.get("id");
-  if (id) {
-    document.getElementById("scan-input").value = id;
-    lookupOffer();
-  }
+function loadConfig(){
+  try{
+    var s=JSON.parse(localStorage.getItem("qrOfferConfig")||"{}");
+    CFG=Object.assign(CFG,s);
+    document.getElementById("c-url").value=CFG.scriptUrl||"";
+    document.getElementById("c-secret").value=CFG.secret||"";
+    document.getElementById("c-shopname").value=CFG.shopName||"";
+    document.getElementById("header-shop").textContent=CFG.shopName;
+  }catch(e){}
+  var p=new URLSearchParams(window.location.search);
+  var id=p.get("id");
+  if(id){document.getElementById("scan-input").value=id;lookupOffer();}
 }
 
-function saveConfig() {
-  CFG.scriptUrl = document.getElementById("c-url").value.trim();
-  CFG.secret    = document.getElementById("c-secret").value.trim();
-  CFG.shopName  = document.getElementById("c-shopname").value.trim() || "My Shop";
-  localStorage.setItem("qrOfferConfig", JSON.stringify({ ...CFG }));
-  document.getElementById("header-shop").textContent = CFG.shopName;
+function saveConfig(){
+  CFG.scriptUrl=document.getElementById("c-url").value.trim();
+  CFG.secret=document.getElementById("c-secret").value.trim();
+  CFG.shopName=document.getElementById("c-shopname").value.trim()||"My Shop";
+  localStorage.setItem("qrOfferConfig",JSON.stringify(CFG));
+  document.getElementById("header-shop").textContent=CFG.shopName;
 }
 
-// ── API ──────────────────────────────────────────────────────
-async function apiFetch(params) {
-  if (!CFG.scriptUrl) throw new Error("Apps Script URL not configured. Open ⚙ Connection Settings.");
-  const url = new URL(CFG.scriptUrl);
-  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
-  const res  = await fetch(url.toString());
-  const json = await res.json();
-  return json;
+function startCamera(){
+  document.getElementById("cam-ph").style.display="none";
+  document.getElementById("scan-overlay").style.display="flex";
+  document.getElementById("btn-start").style.display="none";
+  document.getElementById("btn-stop").style.display="flex";
+  document.getElementById("btn-flip").style.display="flex";
+  document.getElementById("camera-wrap").classList.add("scanning");
+  setStatus("scanning","Scanning for QR code...");
+  qrScanner=new Html5Qrcode("qr-reader");
+  var facing=useFront?{facingMode:"user"}:{facingMode:{ideal:"environment"}};
+  qrScanner.start(facing,{fps:15,qrbox:{width:200,height:200},aspectRatio:1},onScanned,function(){})
+    .catch(function(err){
+      setStatus("err","Camera error - check permissions");
+      addLog("Camera error: "+err,"red");
+      resetCamUI();
+    });
 }
 
-// ── Look up offer ─────────────────────────────────────────────
-async function lookupOffer() {
-  let id = document.getElementById("scan-input").value.trim();
+function stopCamera(){
+  if(qrScanner){qrScanner.stop().catch(function(){}).finally(function(){qrScanner=null;});}
+  resetCamUI();
+}
 
-  // Support full URLs — extract ?id= param
-  if (id.includes("?")) {
-    try { id = new URL(id).searchParams.get("id") || id; } catch{}
-  }
+function resetCamUI(){
+  document.getElementById("cam-ph").style.display="flex";
+  document.getElementById("scan-overlay").style.display="none";
+  document.getElementById("btn-start").style.display="flex";
+  document.getElementById("btn-stop").style.display="none";
+  document.getElementById("btn-flip").style.display="none";
+  document.getElementById("camera-wrap").classList.remove("scanning","success");
+  setStatus("idle","Camera is off");
+}
 
-  if (!id) { addLog("No ID entered.", "yellow"); return; }
+function flipCamera(){
+  useFront=!useFront;
+  stopCamera();
+  setTimeout(startCamera,400);
+}
 
-  document.getElementById("btn-redeem").disabled = true;
-  document.getElementById("empty-state").style.display = "none";
+function onScanned(raw){
+  if(cooldown)return;
+  cooldown=true;
+  document.getElementById("camera-wrap").classList.remove("scanning");
+  document.getElementById("camera-wrap").classList.add("success");
+  setStatus("found","QR detected! Loading offer...");
+  addLog("QR scanned","green");
+  var id=raw.trim();
+  try{var u=new URL(id);id=u.searchParams.get("id")||id;}catch(e){}
+  document.getElementById("scan-input").value=id;
+  stopCamera();
+  lookupOffer(id).finally(function(){setTimeout(function(){cooldown=false;},3000);});
+}
 
-  try {
-    const data = await apiFetch({ action: "getOffer", id });
+function setStatus(type,msg){
+  var el=document.getElementById("scan-status");
+  var dot=document.getElementById("scan-dot");
+  var txt=document.getElementById("scan-status-txt");
+  el.className="scan-status "+type;
+  dot.style.display=(type==="scanning"||type==="found")?"block":"none";
+  txt.textContent=msg;
+}
 
-    if (!data.success || !data.offer) {
-      addLog(`Lookup failed: ${data.error || "Unknown error"}`, "red");
-      document.getElementById("offer-card").style.display = "none";
-      document.getElementById("empty-state").style.display = "flex";
+async function apiFetch(params){
+  if(!CFG.scriptUrl)throw new Error("Apps Script URL not configured. Open Connection Settings.");
+  var url=new URL(CFG.scriptUrl);
+  Object.entries(params).forEach(function(kv){url.searchParams.set(kv[0],kv[1]);});
+  var res=await fetch(url.toString());
+  return res.json();
+}
+
+async function lookupOffer(idOverride){
+  var id=idOverride||document.getElementById("scan-input").value.trim();
+  try{var u=new URL(id);id=u.searchParams.get("id")||id;}catch(e){}
+  if(!id){addLog("No ID entered.","yellow");return;}
+  document.getElementById("btn-redeem").disabled=true;
+  document.getElementById("empty-state").style.display="none";
+  try{
+    var data=await apiFetch({action:"getOffer",id:id});
+    if(!data.success||!data.offer){
+      addLog("Lookup failed: "+(data.error||"Unknown"),"red");
+      document.getElementById("offer-card").style.display="none";
+      document.getElementById("empty-state").style.display="flex";
       return;
     }
-
-    currentOffer = data.offer;
-    renderOfferCard(data.offer, data.status);
-    addLog(`Loaded offer for ${data.offer.name} — ${data.offer.offerTitle} [${data.status}]`,
-           data.status === "active" ? "green" : "yellow");
-
-  } catch(e) {
-    addLog("Error: " + e.message, "red");
-  }
+    currentOffer=data.offer;
+    renderCard(data.offer,data.status);
+    addLog("Loaded: "+data.offer.offerTitle+" for "+data.offer.name+" ["+data.status+"]",data.status==="active"?"green":"yellow");
+  }catch(e){addLog("Error: "+e.message,"red");}
 }
 
-function renderOfferCard(o, status) {
-  document.getElementById("oc-title").textContent      = o.offerTitle || "—";
-  document.getElementById("oc-customer").textContent   = o.name + (o.email ? ` (${o.email})` : "");
-  document.getElementById("oc-discount").textContent   = o.discount || "—";
-  document.getElementById("oc-id").textContent         = o.id || "—";
-  document.getElementById("oc-created").textContent    = fmtDate(o.createdAt);
-  document.getElementById("oc-expires").textContent    = o.expiresAt ? fmtDate(o.expiresAt) : "None";
-  document.getElementById("oc-email").textContent      = o.email || "—";
-  document.getElementById("oc-redeemed-at").textContent= o.redeemedAt ? fmtDate(o.redeemedAt) : "—";
-  document.getElementById("oc-desc").textContent       = o.offerDesc || "";
-
-  const bar  = document.getElementById("oc-status-bar");
-  const dot  = document.getElementById("oc-status-dot");
-  const text = document.getElementById("oc-status-text");
-
-  bar.className = "status-bar " + status;
-  const labels = { active: "✦ Active — Ready to Redeem", redeemed: "✔ Already Redeemed", expired: "✕ Expired" };
-  const colors = { active: "var(--accent)", redeemed: "var(--blue)", expired: "var(--red)" };
-  text.textContent = labels[status] || status;
-  dot.style.background = colors[status] || "var(--muted)";
-
-  document.getElementById("offer-card").style.display = "block";
-  document.getElementById("btn-redeem").disabled = (status !== "active");
+function renderCard(o,status){
+  document.getElementById("oc-title").textContent=o.offerTitle||"-";
+  document.getElementById("oc-customer").textContent=o.name+(o.email?" ("+o.email+")":"");
+  document.getElementById("oc-discount").textContent=o.discount||"-";
+  document.getElementById("oc-id").textContent=o.id||"-";
+  document.getElementById("oc-created").textContent=fmtDate(o.createdAt);
+  document.getElementById("oc-expires").textContent=o.expiresAt?fmtDate(o.expiresAt):"None";
+  document.getElementById("oc-email").textContent=o.email||"-";
+  document.getElementById("oc-redeemed-at").textContent=o.redeemedAt?fmtDate(o.redeemedAt):"-";
+  document.getElementById("oc-desc").textContent=o.offerDesc||"";
+  var bar=document.getElementById("oc-status-bar");
+  var dot=document.getElementById("oc-status-dot");
+  var txt=document.getElementById("oc-status-text");
+  bar.className="status-bar "+status;
+  var labels={active:"Active - Ready to Redeem",redeemed:"Already Redeemed",expired:"Expired"};
+  var colors={active:"var(--accent)",redeemed:"var(--blue)",expired:"var(--red)"};
+  txt.textContent=labels[status]||status;
+  dot.style.background=colors[status]||"var(--muted)";
+  document.getElementById("offer-card").style.display="block";
+  document.getElementById("btn-redeem").disabled=(status!=="active");
 }
 
-// ── Redeem flow ───────────────────────────────────────────────
-function confirmRedeem() {
-  if (!currentOffer || currentOffer.status !== "active") return;
-  document.getElementById("confirm-msg").textContent =
-    `Redeem "${currentOffer.offerTitle}" for ${currentOffer.name}? This cannot be undone.`;
+function confirmRedeem(){
+  if(!currentOffer||currentOffer.status!=="active")return;
+  document.getElementById("confirm-msg").textContent='Redeem "'+currentOffer.offerTitle+'" for '+currentOffer.name+'? This cannot be undone.';
   document.getElementById("confirm-overlay").classList.add("show");
 }
 
-function closeConfirm() {
-  document.getElementById("confirm-overlay").classList.remove("show");
-}
+function closeConfirm(){document.getElementById("confirm-overlay").classList.remove("show");}
 
-async function doRedeem() {
-  if (!currentOffer) return;
-  const btn = document.getElementById("btn-confirm-yes");
-  btn.disabled = true;
-  btn.innerHTML = `<span class="spinner" style="border-top-color:#000"></span>`;
-
-  try {
-    const data = await apiFetch({
-      action : "redeemOffer",
-      secret : CFG.secret,
-      id     : currentOffer.id,
-    });
-
+async function doRedeem(){
+  if(!currentOffer)return;
+  var btn=document.getElementById("btn-confirm-yes");
+  btn.disabled=true;
+  btn.innerHTML='<span class="spinner" style="border-top-color:#000"></span>';
+  try{
+    var data=await apiFetch({action:"redeemOffer",secret:CFG.secret,id:currentOffer.id});
     closeConfirm();
-
-    if (data.success) {
-      currentOffer.status = "redeemed";
-      renderOfferCard({ ...currentOffer }, "redeemed");
-      addLog(`✅ Redeemed: ${currentOffer.offerTitle} for ${currentOffer.name}`, "green");
-      showSuccessFlash(`Offer redeemed for ${currentOffer.name}`);
-      document.getElementById("btn-redeem").disabled = true;
-      document.getElementById("scan-input").value = "";
-    } else {
-      addLog(`Redeem failed: ${data.error}`, "red");
-      alert(data.error || "Could not redeem offer.");
+    if(data.success){
+      currentOffer.status="redeemed";
+      renderCard(Object.assign({},currentOffer),"redeemed");
+      addLog("Redeemed: "+currentOffer.offerTitle+" for "+currentOffer.name,"green");
+      var f=document.getElementById("success-flash");
+      document.getElementById("flash-msg").textContent="Offer redeemed for "+currentOffer.name;
+      f.classList.add("show");
+      setTimeout(function(){f.classList.remove("show");},2500);
+      document.getElementById("btn-redeem").disabled=true;
+      document.getElementById("scan-input").value="";
+    }else{
+      addLog("Failed: "+(data.error||"Unknown"),"red");
+      alert(data.error||"Could not redeem.");
     }
-  } catch(e) {
-    closeConfirm();
-    addLog("Error: " + e.message, "red");
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Yes, Redeem";
-  }
+  }catch(e){closeConfirm();addLog("Error: "+e.message,"red");}
+  finally{btn.disabled=false;btn.textContent="Yes, Redeem";}
 }
 
-function showSuccessFlash(msg) {
-  const f = document.getElementById("success-flash");
-  document.getElementById("flash-msg").textContent = msg;
-  f.classList.add("show");
-  setTimeout(() => f.classList.remove("show"), 2500);
-}
-
-// ── Log ──────────────────────────────────────────────────────
-function addLog(msg, type = "green") {
-  const el = document.getElementById("log-entries");
-  const empty = el.querySelector(".log-empty");
-  if (empty) empty.remove();
-
-  const now = new Date().toLocaleTimeString("en-IN");
-  const entry = document.createElement("div");
-  entry.className = "log-entry";
-  entry.innerHTML = `
-    <div class="log-dot ${type}"></div>
-    <div class="log-time">${now}</div>
-    <div class="log-msg">${msg}</div>
-  `;
+function addLog(msg,type){
+  type=type||"green";
+  var el=document.getElementById("log-entries");
+  var em=el.querySelector(".log-empty");
+  if(em)em.remove();
+  var now=new Date().toLocaleTimeString("en-IN");
+  var entry=document.createElement("div");
+  entry.className="log-entry";
+  entry.innerHTML='<div class="log-dot '+type+'"></div><div class="log-time">'+now+'</div><div class="log-msg">'+msg+'</div>';
   el.prepend(entry);
-
-  // Keep only 50 entries
-  while (el.children.length > 50) el.lastChild.remove();
+  while(el.children.length>50)el.lastChild.remove();
 }
 
-function clearLog() {
-  document.getElementById("log-entries").innerHTML = '<div class="log-empty">No activity yet.</div>';
+function clearLog(){document.getElementById("log-entries").innerHTML='<div class="log-empty">No activity yet.</div>';}
+
+function fmtDate(iso){
+  if(!iso)return"-";
+  try{return new Date(iso).toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"});}catch(e){return iso;}
 }
 
-// ── Helpers ──────────────────────────────────────────────────
-function fmtDate(iso) {
-  if (!iso) return "—";
-  try { return new Date(iso).toLocaleString("en-IN", { dateStyle:"medium", timeStyle:"short" }); }
-  catch { return iso; }
-}
-
-// ── Init ─────────────────────────────────────────────────────
 loadConfig();
-
-// USB barcode scanner support (sends Enter after scan)
-document.getElementById("scan-input").addEventListener("keydown", e => {
-  if (e.key === "Enter") { e.preventDefault(); lookupOffer(); }
-});
+document.getElementById("scan-input").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();lookupOffer();}});
 </script>
 </body>
 </html>
