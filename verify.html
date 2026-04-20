@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>QR Offer System — Verify &amp; Redeem</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root {
+    --bg     : #0f1117;
+    --panel  : #161821;
+    --card   : #1e2030;
+    --border : #2c2f45;
+    --accent : #4fffb0;
+    --accentd: #00c97a;
+    --red    : #ff4b6e;
+    --yellow : #ffc94a;
+    --blue   : #60a5fa;
+    --text   : #e2e5f0;
+    --muted  : #636880;
+    --r      : 12px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    min-height: 100vh;
+  }
+  /* scanlines aesthetic */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.04) 2px, rgba(0,0,0,.04) 4px);
+  }
+
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 32px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    position: relative; z-index: 10;
+  }
+  .logo { font-size: 1rem; font-weight: 700; letter-spacing: -.3px; }
+  .logo em { color: var(--accent); font-style: normal; }
+  .header-badge {
+    background: rgba(79,255,176,.1); color: var(--accent);
+    border: 1px solid rgba(79,255,176,.25);
+    padding: 5px 12px; border-radius: 99px;
+    font-size: .75rem; font-weight: 600;
+  }
+  .shop-name { font-size: .85rem; color: var(--muted); }
+
+  .layout {
+    position: relative; z-index: 1;
+    display: grid; grid-template-columns: 400px 1fr; min-height: calc(100vh - 57px);
+  }
+
+  /* ── Left panel ── */
+  .left-panel {
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    padding: 28px 24px;
+    display: flex; flex-direction: column; gap: 20px;
+  }
+  .panel-title { font-size: .7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 4px; }
+
+  .scan-box {
+    border: 2px dashed var(--border);
+    border-radius: var(--r); padding: 28px 20px;
+    text-align: center; transition: border-color .2s;
+  }
+  .scan-box:focus-within { border-color: var(--accent); }
+  .scan-box .scan-icon { font-size: 2.4rem; margin-bottom: 12px; }
+  .scan-box p { color: var(--muted); font-size: .85rem; margin-bottom: 14px; }
+  .scan-input {
+    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 14px;
+    color: var(--text); font-family: 'DM Mono', monospace; font-size: .9rem;
+    outline: none; text-align: center; transition: border-color .2s;
+  }
+  .scan-input:focus { border-color: var(--accent); }
+
+  .divider { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: .75rem; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 13px; border-radius: 10px;
+    border: none; cursor: pointer;
+    font-family: 'Space Grotesk', sans-serif; font-size: .95rem; font-weight: 700;
+    transition: all .2s;
+  }
+  .btn-green { background: var(--accent); color: #000; }
+  .btn-green:hover { background: #5fffbc; transform: translateY(-1px); }
+  .btn-red { background: rgba(255,75,110,.15); color: var(--red); border: 1px solid rgba(255,75,110,.25); }
+  .btn-red:hover { background: rgba(255,75,110,.25); }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--text); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; transform: none !important; }
+
+  /* ── Config section (collapsed by default) ── */
+  .config-section details summary {
+    cursor: pointer; font-size: .8rem; color: var(--muted);
+    list-style: none; padding: 10px 0; display: flex; align-items: center; gap: 6px;
+  }
+  .config-section details[open] summary { color: var(--text); }
+  .config-body { padding-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .f-label { font-size: .72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+  .f-input {
+    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px;
+    color: var(--text); font-family: 'DM Mono', monospace; font-size: .82rem;
+    outline: none; transition: border-color .2s;
+  }
+  .f-input:focus { border-color: var(--accent); }
+
+  /* ── Right panel ── */
+  .right-panel { padding: 28px 32px; }
+  .right-header { margin-bottom: 24px; }
+  .right-header h2 { font-size: 1.4rem; font-weight: 700; }
+  .right-header p  { color: var(--muted); font-size: .88rem; margin-top: 4px; }
+
+  /* ── Offer card ── */
+  #offer-card { display: none; }
+
+  .offer-card-inner {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 18px; overflow: hidden; margin-bottom: 20px;
+    animation: appear .3s ease;
+  }
+  @keyframes appear { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+  .oc-header {
+    padding: 24px 28px;
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+  }
+  .oc-header-left h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 6px; }
+  .oc-header-left p  { color: var(--muted); font-size: .88rem; }
+  .discount-tag {
+    background: rgba(79,255,176,.12); color: var(--accent);
+    border: 1px solid rgba(79,255,176,.25);
+    padding: 8px 16px; border-radius: 10px;
+    font-size: 1.1rem; font-weight: 800; white-space: nowrap;
+  }
+
+  .oc-divider { height: 1px; background: var(--border); margin: 0 28px; }
+
+  .oc-body { padding: 20px 28px; }
+  .oc-meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+  .oc-meta-item { }
+  .oc-meta-label { font-size: .7rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+  .oc-meta-value { font-size: .88rem; font-weight: 600; }
+
+  .status-bar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 18px; border-radius: 10px; margin-bottom: 20px;
+    font-size: .9rem; font-weight: 600;
+  }
+  .status-bar.active   { background: rgba(79,255,176,.08); color: var(--accent); border: 1px solid rgba(79,255,176,.2); }
+  .status-bar.redeemed { background: rgba(96,165,250,.08); color: var(--blue); border: 1px solid rgba(96,165,250,.2); }
+  .status-bar.expired  { background: rgba(255,75,110,.08); color: var(--red); border: 1px solid rgba(255,75,110,.2); }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── Confirmation overlay ── */
+  #confirm-overlay {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,.7); backdrop-filter: blur(6px);
+    align-items: center; justify-content: center;
+  }
+  #confirm-overlay.show { display: flex; }
+  .confirm-box {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; padding: 36px; max-width: 380px; width: 90%;
+    text-align: center; animation: appear .3s ease;
+  }
+  .confirm-box .icon { font-size: 3rem; margin-bottom: 16px; }
+  .confirm-box h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 8px; }
+  .confirm-box p { color: var(--muted); font-size: .9rem; margin-bottom: 24px; line-height: 1.6; }
+  .confirm-actions { display: flex; gap: 12px; }
+  .confirm-actions .btn { flex: 1; }
+
+  /* ── Success flash ── */
+  #success-flash {
+    display: none; position: fixed; inset: 0; z-index: 300;
+    background: rgba(0,0,0,.85);
+    align-items: center; justify-content: center; flex-direction: column;
+    text-align: center; gap: 16px;
+    animation: flash .4s ease;
+  }
+  #success-flash.show { display: flex; }
+  @keyframes flash { from{opacity:0} to{opacity:1} }
+  .flash-icon { font-size: 5rem; }
+  .flash-title { font-size: 2rem; font-weight: 800; color: var(--accent); }
+  .flash-msg { color: var(--muted); font-size: 1rem; }
+
+  /* ── Log ── */
+  #activity-log {
+    margin-top: 24px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--r); overflow: hidden;
+  }
+  .log-header {
+    padding: 12px 18px; border-bottom: 1px solid var(--border);
+    font-size: .75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .08em;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .log-clear { background: none; border: none; color: var(--muted); cursor: pointer; font-size: .75rem; transition: color .2s; }
+  .log-clear:hover { color: var(--text); }
+  #log-entries { max-height: 220px; overflow-y: auto; }
+  .log-entry {
+    padding: 10px 18px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: flex-start; gap: 12px; font-size: .82rem;
+    animation: appear .2s ease;
+  }
+  .log-entry:last-child { border: none; }
+  .log-time { color: var(--muted); font-family: 'DM Mono', monospace; font-size: .72rem; white-space: nowrap; margin-top: 2px; }
+  .log-msg  { flex: 1; }
+  .log-dot  { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+  .log-dot.green { background: var(--accent); }
+  .log-dot.red   { background: var(--red); }
+  .log-dot.yellow{ background: var(--yellow); }
+  .log-empty { padding: 20px; text-align: center; color: var(--muted); font-size: .85rem; }
+
+  /* ── Spinner ── */
+  .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(0,0,0,.3); border-top-color: #000; border-radius: 50%; animation: spin .6s linear infinite; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+
+  /* ── Empty state ── */
+  .empty-right {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 60vh; text-align: center; color: var(--muted);
+  }
+  .empty-right .icon { font-size: 4rem; margin-bottom: 16px; opacity: .5; }
+  .empty-right h3 { font-size: 1.1rem; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+  .empty-right p { font-size: .88rem; max-width: 280px; line-height: 1.6; }
+
+  @media (max-width: 780px) {
+    .layout { grid-template-columns: 1fr; }
+    .left-panel { border-right: none; border-bottom: 1px solid var(--border); }
+    .right-panel { padding: 20px 16px; }
+    .oc-meta { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">QR<em>Offer</em> · Verify</div>
+  <div class="header-badge">Staff Panel</div>
+  <div class="shop-name" id="header-shop">Shop Terminal</div>
+</header>
+
+<div class="layout">
+
+  <!-- ══════════════ LEFT PANEL ══════════════ -->
+  <div class="left-panel">
+
+    <div>
+      <div class="panel-title">Scan or Enter Offer ID</div>
+      <div class="scan-box">
+        <div class="scan-icon">📷</div>
+        <p>Use a USB barcode scanner or paste the Offer ID from the customer's screen</p>
+        <input
+          type="text" id="scan-input" class="scan-input"
+          placeholder="Paste offer ID here…"
+          autofocus
+          onkeydown="if(event.key==='Enter') lookupOffer()"
+        />
+      </div>
+    </div>
+
+    <button class="btn btn-ghost" onclick="lookupOffer()">🔍 Look Up Offer</button>
+
+    <div class="divider">then</div>
+
+    <div>
+      <button class="btn btn-green" id="btn-redeem" onclick="confirmRedeem()" disabled>
+        ✓ Redeem This Offer
+      </button>
+      <p style="text-align:center;font-size:.75rem;color:var(--muted);margin-top:8px;">
+        Only active offers can be redeemed. This action is irreversible.
+      </p>
+    </div>
+
+    <!-- Config -->
+    <div class="config-section" style="margin-top:auto;">
+      <details>
+        <summary>⚙ Connection Settings</summary>
+        <div class="config-body">
+          <div>
+            <div class="f-label">Apps Script URL</div>
+            <input type="url" id="c-url" class="f-input" placeholder="https://script.google.com/…" oninput="saveConfig()" />
+          </div>
+          <div>
+            <div class="f-label">Shop Secret Key</div>
+            <input type="password" id="c-secret" class="f-input" placeholder="Your SHOP_SECRET" oninput="saveConfig()" />
+          </div>
+          <div>
+            <div class="f-label">Shop Display Name</div>
+            <input type="text" id="c-shopname" class="f-input" placeholder="My Shop" oninput="saveConfig()" />
+          </div>
+        </div>
+      </details>
+    </div>
+
+  </div><!-- /left-panel -->
+
+  <!-- ══════════════ RIGHT PANEL ══════════════ -->
+  <div class="right-panel">
+    <div class="right-header">
+      <h2>Offer Details</h2>
+      <p>Look up an offer to view details and redeem it.</p>
+    </div>
+
+    <!-- Offer card (shown after lookup) -->
+    <div id="offer-card">
+      <div class="offer-card-inner">
+        <div class="oc-header">
+          <div class="oc-header-left">
+            <h3 id="oc-title">—</h3>
+            <p id="oc-customer">—</p>
+          </div>
+          <div class="discount-tag" id="oc-discount">—</div>
+        </div>
+        <div class="oc-divider"></div>
+        <div class="oc-body">
+          <div class="status-bar" id="oc-status-bar">
+            <div class="status-dot" id="oc-status-dot"></div>
+            <span id="oc-status-text">—</span>
+          </div>
+          <div class="oc-meta">
+            <div class="oc-meta-item">
+              <div class="oc-meta-label">Offer ID</div>
+              <div class="oc-meta-value" id="oc-id" style="font-family:'DM Mono',monospace;font-size:.75rem;word-break:break-all;">—</div>
+            </div>
+            <div class="oc-meta-item">
+              <div class="oc-meta-label">Created</div>
+              <div class="oc-meta-value" id="oc-created">—</div>
+            </div>
+            <div class="oc-meta-item">
+              <div class="oc-meta-label">Expires</div>
+              <div class="oc-meta-value" id="oc-expires">—</div>
+            </div>
+            <div class="oc-meta-item">
+              <div class="oc-meta-label">Email</div>
+              <div class="oc-meta-value" id="oc-email">—</div>
+            </div>
+            <div class="oc-meta-item">
+              <div class="oc-meta-label">Redeemed At</div>
+              <div class="oc-meta-value" id="oc-redeemed-at">—</div>
+            </div>
+          </div>
+          <p id="oc-desc" style="font-size:.88rem;color:var(--muted);line-height:1.6;"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div class="empty-right" id="empty-state">
+      <div class="icon">🔍</div>
+      <h3>No offer loaded</h3>
+      <p>Enter a customer's offer ID in the left panel and click Look Up Offer.</p>
+    </div>
+
+    <!-- Activity log -->
+    <div id="activity-log">
+      <div class="log-header">
+        <span>Activity Log</span>
+        <button class="log-clear" onclick="clearLog()">Clear</button>
+      </div>
+      <div id="log-entries">
+        <div class="log-empty">No activity yet.</div>
+      </div>
+    </div>
+
+  </div><!-- /right-panel -->
+
+</div><!-- /layout -->
+
+<!-- Confirmation dialog -->
+<div id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="icon">⚡</div>
+    <h3>Redeem this offer?</h3>
+    <p id="confirm-msg">Once redeemed, this offer cannot be used again. Confirm you are applying it for the customer.</p>
+    <div class="confirm-actions">
+      <button class="btn btn-ghost" onclick="closeConfirm()">Cancel</button>
+      <button class="btn btn-green" id="btn-confirm-yes" onclick="doRedeem()">Yes, Redeem</button>
+    </div>
+  </div>
+</div>
+
+<!-- Success flash -->
+<div id="success-flash">
+  <div class="flash-icon">✅</div>
+  <div class="flash-title">Redeemed!</div>
+  <div class="flash-msg" id="flash-msg">Offer has been marked as redeemed.</div>
+</div>
+
+<script>
+// ── Config ───────────────────────────────────────────────────
+let CFG = { scriptUrl: "", secret: "", shopName: "My Shop" };
+let currentOffer = null;
+
+function loadConfig() {
+  try {
+    const s = JSON.parse(localStorage.getItem("qrOfferConfig") || "{}");
+    CFG.scriptUrl = s.scriptUrl || "";
+    CFG.secret    = s.secret    || "";
+    CFG.shopName  = s.shopName  || "My Shop";
+    document.getElementById("c-url").value      = CFG.scriptUrl;
+    document.getElementById("c-secret").value   = CFG.secret;
+    document.getElementById("c-shopname").value = CFG.shopName;
+    document.getElementById("header-shop").textContent = CFG.shopName;
+  } catch(e) {}
+
+  // Pre-fill from URL ?id=
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
+  if (id) {
+    document.getElementById("scan-input").value = id;
+    lookupOffer();
+  }
+}
+
+function saveConfig() {
+  CFG.scriptUrl = document.getElementById("c-url").value.trim();
+  CFG.secret    = document.getElementById("c-secret").value.trim();
+  CFG.shopName  = document.getElementById("c-shopname").value.trim() || "My Shop";
+  localStorage.setItem("qrOfferConfig", JSON.stringify({ ...CFG }));
+  document.getElementById("header-shop").textContent = CFG.shopName;
+}
+
+// ── API ──────────────────────────────────────────────────────
+async function apiFetch(params) {
+  if (!CFG.scriptUrl) throw new Error("Apps Script URL not configured. Open ⚙ Connection Settings.");
+  const url = new URL(CFG.scriptUrl);
+  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+  const res  = await fetch(url.toString());
+  const json = await res.json();
+  return json;
+}
+
+// ── Look up offer ─────────────────────────────────────────────
+async function lookupOffer() {
+  let id = document.getElementById("scan-input").value.trim();
+
+  // Support full URLs — extract ?id= param
+  if (id.includes("?")) {
+    try { id = new URL(id).searchParams.get("id") || id; } catch{}
+  }
+
+  if (!id) { addLog("No ID entered.", "yellow"); return; }
+
+  document.getElementById("btn-redeem").disabled = true;
+  document.getElementById("empty-state").style.display = "none";
+
+  try {
+    const data = await apiFetch({ action: "getOffer", id });
+
+    if (!data.success || !data.offer) {
+      addLog(`Lookup failed: ${data.error || "Unknown error"}`, "red");
+      document.getElementById("offer-card").style.display = "none";
+      document.getElementById("empty-state").style.display = "flex";
+      return;
+    }
+
+    currentOffer = data.offer;
+    renderOfferCard(data.offer, data.status);
+    addLog(`Loaded offer for ${data.offer.name} — ${data.offer.offerTitle} [${data.status}]`,
+           data.status === "active" ? "green" : "yellow");
+
+  } catch(e) {
+    addLog("Error: " + e.message, "red");
+  }
+}
+
+function renderOfferCard(o, status) {
+  document.getElementById("oc-title").textContent      = o.offerTitle || "—";
+  document.getElementById("oc-customer").textContent   = o.name + (o.email ? ` (${o.email})` : "");
+  document.getElementById("oc-discount").textContent   = o.discount || "—";
+  document.getElementById("oc-id").textContent         = o.id || "—";
+  document.getElementById("oc-created").textContent    = fmtDate(o.createdAt);
+  document.getElementById("oc-expires").textContent    = o.expiresAt ? fmtDate(o.expiresAt) : "None";
+  document.getElementById("oc-email").textContent      = o.email || "—";
+  document.getElementById("oc-redeemed-at").textContent= o.redeemedAt ? fmtDate(o.redeemedAt) : "—";
+  document.getElementById("oc-desc").textContent       = o.offerDesc || "";
+
+  const bar  = document.getElementById("oc-status-bar");
+  const dot  = document.getElementById("oc-status-dot");
+  const text = document.getElementById("oc-status-text");
+
+  bar.className = "status-bar " + status;
+  const labels = { active: "✦ Active — Ready to Redeem", redeemed: "✔ Already Redeemed", expired: "✕ Expired" };
+  const colors = { active: "var(--accent)", redeemed: "var(--blue)", expired: "var(--red)" };
+  text.textContent = labels[status] || status;
+  dot.style.background = colors[status] || "var(--muted)";
+
+  document.getElementById("offer-card").style.display = "block";
+  document.getElementById("btn-redeem").disabled = (status !== "active");
+}
+
+// ── Redeem flow ───────────────────────────────────────────────
+function confirmRedeem() {
+  if (!currentOffer || currentOffer.status !== "active") return;
+  document.getElementById("confirm-msg").textContent =
+    `Redeem "${currentOffer.offerTitle}" for ${currentOffer.name}? This cannot be undone.`;
+  document.getElementById("confirm-overlay").classList.add("show");
+}
+
+function closeConfirm() {
+  document.getElementById("confirm-overlay").classList.remove("show");
+}
+
+async function doRedeem() {
+  if (!currentOffer) return;
+  const btn = document.getElementById("btn-confirm-yes");
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner" style="border-top-color:#000"></span>`;
+
+  try {
+    const data = await apiFetch({
+      action : "redeemOffer",
+      secret : CFG.secret,
+      id     : currentOffer.id,
+    });
+
+    closeConfirm();
+
+    if (data.success) {
+      currentOffer.status = "redeemed";
+      renderOfferCard({ ...currentOffer }, "redeemed");
+      addLog(`✅ Redeemed: ${currentOffer.offerTitle} for ${currentOffer.name}`, "green");
+      showSuccessFlash(`Offer redeemed for ${currentOffer.name}`);
+      document.getElementById("btn-redeem").disabled = true;
+      document.getElementById("scan-input").value = "";
+    } else {
+      addLog(`Redeem failed: ${data.error}`, "red");
+      alert(data.error || "Could not redeem offer.");
+    }
+  } catch(e) {
+    closeConfirm();
+    addLog("Error: " + e.message, "red");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Yes, Redeem";
+  }
+}
+
+function showSuccessFlash(msg) {
+  const f = document.getElementById("success-flash");
+  document.getElementById("flash-msg").textContent = msg;
+  f.classList.add("show");
+  setTimeout(() => f.classList.remove("show"), 2500);
+}
+
+// ── Log ──────────────────────────────────────────────────────
+function addLog(msg, type = "green") {
+  const el = document.getElementById("log-entries");
+  const empty = el.querySelector(".log-empty");
+  if (empty) empty.remove();
+
+  const now = new Date().toLocaleTimeString("en-IN");
+  const entry = document.createElement("div");
+  entry.className = "log-entry";
+  entry.innerHTML = `
+    <div class="log-dot ${type}"></div>
+    <div class="log-time">${now}</div>
+    <div class="log-msg">${msg}</div>
+  `;
+  el.prepend(entry);
+
+  // Keep only 50 entries
+  while (el.children.length > 50) el.lastChild.remove();
+}
+
+function clearLog() {
+  document.getElementById("log-entries").innerHTML = '<div class="log-empty">No activity yet.</div>';
+}
+
+// ── Helpers ──────────────────────────────────────────────────
+function fmtDate(iso) {
+  if (!iso) return "—";
+  try { return new Date(iso).toLocaleString("en-IN", { dateStyle:"medium", timeStyle:"short" }); }
+  catch { return iso; }
+}
+
+// ── Init ─────────────────────────────────────────────────────
+loadConfig();
+
+// USB barcode scanner support (sends Enter after scan)
+document.getElementById("scan-input").addEventListener("keydown", e => {
+  if (e.key === "Enter") { e.preventDefault(); lookupOffer(); }
+});
+</script>
+</body>
+</html>

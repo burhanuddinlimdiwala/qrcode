@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>QR Offer System — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root {
+    --bg:       #0b0c10;
+    --surface:  #13141a;
+    --card:     #1c1e28;
+    --border:   #2a2d3e;
+    --accent:   #7c5cfc;
+    --accent2:  #fc5c7d;
+    --green:    #22c55e;
+    --yellow:   #f59e0b;
+    --red:      #ef4444;
+    --text:     #e8e9f0;
+    --muted:    #6b7099;
+    --radius:   14px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ── Nav ── */
+  nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 40px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-size: 1.1rem; font-weight: 800; letter-spacing: -.5px; }
+  .logo span { color: var(--accent); }
+  .nav-links { display: flex; gap: 8px; }
+  .nav-links a {
+    padding: 8px 18px; border-radius: 99px; font-size: .85rem; font-weight: 600;
+    color: var(--muted); text-decoration: none; transition: all .2s;
+  }
+  .nav-links a:hover, .nav-links a.active {
+    background: var(--card); color: var(--text);
+  }
+
+  /* ── Layout ── */
+  .container { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── Config banner ── */
+  #config-warning {
+    background: linear-gradient(135deg, #3d2500, #1a0d00);
+    border: 1px solid #f59e0b44;
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 28px;
+    display: flex; align-items: center; gap: 12px;
+    font-family: 'DM Mono', monospace; font-size: .82rem;
+  }
+  #config-warning .icon { font-size: 1.4rem; }
+
+  /* ── Section headers ── */
+  .section-header { margin-bottom: 28px; }
+  .section-header h1 { font-size: 2rem; font-weight: 800; }
+  .section-header p  { color: var(--muted); margin-top: 6px; font-size: .95rem; }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px;
+  }
+  .card-title { font-size: 1rem; font-weight: 700; margin-bottom: 20px; color: var(--text); }
+
+  /* ── Form ── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 8px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: .8rem; font-weight: 600; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; }
+  input, textarea, select {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px;
+    color: var(--text); font-family: 'DM Mono', monospace; font-size: .9rem;
+    outline: none; transition: border-color .2s;
+    width: 100%;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 80px; }
+
+  /* ── Secret key input ── */
+  .secret-row {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 4px 14px;
+  }
+  .secret-row input { border: none; background: transparent; padding: 8px 0; }
+  .secret-row .eye { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1rem; padding: 0; }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 24px; border-radius: 99px;
+    border: none; cursor: pointer; font-family: 'Syne', sans-serif;
+    font-size: .9rem; font-weight: 700; transition: all .2s;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #6a4ae0; transform: translateY(-1px); }
+  .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: #2d0f0f; color: var(--red); border: 1px solid #3d1515; }
+  .btn-danger:hover { background: #3d1515; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; transform: none !important; }
+  .btn-sm { padding: 7px 14px; font-size: .8rem; }
+
+  /* ── QR Output ── */
+  #qr-result {
+    display: none;
+    margin-top: 28px;
+    border-top: 1px solid var(--border);
+    padding-top: 28px;
+  }
+  .qr-grid { display: grid; grid-template-columns: auto 1fr; gap: 28px; align-items: start; }
+  #qr-canvas {
+    background: white; padding: 12px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .qr-details h3 { font-size: 1.2rem; font-weight: 800; margin-bottom: 8px; }
+  .qr-details p { color: var(--muted); font-size: .9rem; margin-bottom: 14px; }
+  .offer-id {
+    font-family: 'DM Mono', monospace; font-size: .8rem;
+    background: var(--surface); padding: 10px 14px; border-radius: 8px;
+    color: var(--accent); word-break: break-all; margin-bottom: 14px;
+    border: 1px solid var(--border);
+  }
+  .qr-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  /* ── Stats row ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px 22px;
+  }
+  .stat-label { font-size: .75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+  .stat-value { font-size: 2rem; font-weight: 800; }
+  .stat-value.active { color: var(--green); }
+  .stat-value.redeemed { color: var(--accent); }
+  .stat-value.expired { color: var(--red); }
+
+  /* ── Table ── */
+  .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  thead th {
+    background: var(--surface); padding: 12px 16px;
+    text-align: left; font-size: .75rem; font-weight: 700;
+    color: var(--muted); text-transform: uppercase; letter-spacing: .08em;
+    border-bottom: 1px solid var(--border);
+  }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background .15s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface); }
+  td { padding: 13px 16px; vertical-align: middle; }
+  .id-cell { font-family: 'DM Mono', monospace; font-size: .75rem; color: var(--muted); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ── Status badges ── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 99px; font-size: .75rem; font-weight: 700;
+  }
+  .badge::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; }
+  .badge-active   { background: #052816; color: var(--green); }
+  .badge-active::before   { background: var(--green); }
+  .badge-redeemed { background: #1a1035; color: var(--accent); }
+  .badge-redeemed::before { background: var(--accent); }
+  .badge-expired  { background: #2d0f0f; color: var(--red); }
+  .badge-expired::before  { background: var(--red); }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed; bottom: 28px; right: 28px;
+    background: var(--card); border: 1px solid var(--border);
+    padding: 14px 20px; border-radius: 12px;
+    font-size: .9rem; font-weight: 600;
+    transform: translateY(80px); opacity: 0;
+    transition: all .3s; z-index: 999;
+    max-width: 320px;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.success { border-color: var(--green); color: var(--green); }
+  #toast.error { border-color: var(--red); color: var(--red); }
+
+  /* ── Settings ── */
+  .settings-card { margin-bottom: 20px; }
+  .settings-row { display: flex; gap: 14px; align-items: flex-end; }
+  .settings-row .form-group { flex: 1; }
+
+  /* ── Loading ── */
+  .spinner {
+    display: inline-block; width: 16px; height: 16px;
+    border: 2px solid #ffffff44; border-top-color: #fff;
+    border-radius: 50%; animation: spin .6s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Empty state ── */
+  .empty-state {
+    text-align: center; padding: 60px 20px; color: var(--muted);
+  }
+  .empty-state .icon { font-size: 3rem; margin-bottom: 14px; }
+  .empty-state p { font-size: .95rem; }
+
+  @media (max-width: 700px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .qr-grid { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    nav { padding: 14px 16px; }
+    .container { padding: 20px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">QR<span>Offer</span> Admin</div>
+  <div class="nav-links">
+    <a href="#" class="active" onclick="showPage('generate',this)">Generate</a>
+    <a href="#" onclick="showPage('offers',this)">All Offers</a>
+    <a href="#" onclick="showPage('settings',this)">Settings</a>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- ── Config warning ── -->
+  <div id="config-warning">
+    <span class="icon">⚠️</span>
+    <span>
+      Set your <strong>Apps Script Web App URL</strong> and <strong>Shop Secret</strong> in
+      <strong>Settings</strong> before using. Values are saved in your browser.
+    </span>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       PAGE: Generate
+  ════════════════════════════════════════════ -->
+  <div id="page-generate" class="page active">
+
+    <div class="section-header">
+      <h1>Generate QR Offer</h1>
+      <p>Create a new offer for a customer — a unique QR code is generated instantly.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🎁 New Offer Details</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Customer Name *</label>
+          <input type="text" id="f-name" placeholder="e.g. Priya Sharma" />
+        </div>
+        <div class="form-group">
+          <label>Customer Email</label>
+          <input type="email" id="f-email" placeholder="priya@example.com" />
+        </div>
+        <div class="form-group">
+          <label>Offer Title *</label>
+          <input type="text" id="f-title" placeholder="e.g. 20% Off Birthday Special" />
+        </div>
+        <div class="form-group">
+          <label>Discount / Value</label>
+          <input type="text" id="f-discount" placeholder="e.g. 20% OFF or ₹200 OFF" />
+        </div>
+        <div class="form-group full">
+          <label>Offer Description</label>
+          <textarea id="f-desc" placeholder="Valid on all products above ₹500. Not combinable with other offers."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Expires At (optional)</label>
+          <input type="datetime-local" id="f-expires" />
+        </div>
+        <div class="form-group full" style="margin-top:8px;">
+          <button class="btn btn-primary" id="btn-generate" onclick="generateOffer()">
+            ✦ Generate QR Code
+          </button>
+        </div>
+      </div>
+
+      <!-- QR Result -->
+      <div id="qr-result">
+        <div class="qr-grid">
+          <div id="qr-canvas"></div>
+          <div class="qr-details">
+            <h3 id="qr-offer-title">—</h3>
+            <p id="qr-offer-desc">—</p>
+            <div class="offer-id" id="qr-offer-id">—</div>
+            <div class="qr-actions">
+              <button class="btn btn-secondary btn-sm" onclick="downloadQR()">⬇ Download PNG</button>
+              <button class="btn btn-secondary btn-sm" onclick="copyLink()">🔗 Copy Offer Link</button>
+              <button class="btn btn-secondary btn-sm" onclick="openVerifyPage()">🏪 Open in Verify Page</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /page-generate -->
+
+  <!-- ═══════════════════════════════════════════
+       PAGE: All Offers
+  ════════════════════════════════════════════ -->
+  <div id="page-offers" class="page">
+
+    <div class="section-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h1>All Offers</h1>
+        <p>Live view of your Google Sheets database.</p>
+      </div>
+      <button class="btn btn-secondary" onclick="loadOffers()">↺ Refresh</button>
+    </div>
+
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card"><div class="stat-label">Total</div><div class="stat-value" id="stat-total">—</div></div>
+      <div class="stat-card"><div class="stat-label">Active</div><div class="stat-value active" id="stat-active">—</div></div>
+      <div class="stat-card"><div class="stat-label">Redeemed</div><div class="stat-value redeemed" id="stat-redeemed">—</div></div>
+      <div class="stat-card"><div class="stat-label">Expired</div><div class="stat-value expired" id="stat-expired">—</div></div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th><th>Customer</th><th>Offer</th><th>Discount</th>
+            <th>Status</th><th>Created</th><th>Redeemed</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="offers-table-body">
+          <tr><td colspan="8"><div class="empty-state"><div class="icon">📋</div><p>Click Refresh to load offers from Google Sheets.</p></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div><!-- /page-offers -->
+
+  <!-- ═══════════════════════════════════════════
+       PAGE: Settings
+  ════════════════════════════════════════════ -->
+  <div id="page-settings" class="page">
+
+    <div class="section-header">
+      <h1>Settings</h1>
+      <p>Configure your Apps Script deployment. Saved locally in your browser.</p>
+    </div>
+
+    <div class="card settings-card">
+      <div class="card-title">🔧 Connection</div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label>Apps Script Web App URL *</label>
+        <input type="url" id="s-url" placeholder="https://script.google.com/macros/s/XXXXXXX/exec" />
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label>Shop Secret Key *</label>
+        <div class="secret-row">
+          <input type="password" id="s-secret" placeholder="Your SHOP_SECRET from Code.gs" />
+          <button class="eye" onclick="toggleSecret()">👁</button>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:20px;">
+        <label>Redeem Page URL (where QR codes point)</label>
+        <input type="url" id="s-redeem-url" placeholder="https://yourdomain.com/redeem.html" />
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+        <button class="btn btn-secondary" onclick="testConnection()">🧪 Test Connection</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <div class="card-title">📖 Quick Setup Guide</div>
+      <ol style="color:var(--muted);font-size:.9rem;line-height:2;padding-left:20px;">
+        <li>Open <strong style="color:var(--text)">Google Apps Script</strong> (script.google.com) → New project</li>
+        <li>Paste the contents of <code style="color:var(--accent)">Code.gs</code> and save</li>
+        <li>Change <code style="color:var(--accent)">SHOP_SECRET</code> to a strong secret key</li>
+        <li>Run <code style="color:var(--accent)">setupSheet()</code> function once (authorize permissions)</li>
+        <li>Click <strong style="color:var(--text)">Deploy → New deployment → Web App</strong></li>
+        <li>Set "Execute as: Me" and "Who has access: Anyone" → Deploy</li>
+        <li>Copy the Web App URL and paste it above alongside your secret key</li>
+        <li>Set the <strong style="color:var(--text)">Redeem Page URL</strong> to wherever you host <code style="color:var(--accent)">redeem.html</code></li>
+      </ol>
+    </div>
+
+  </div><!-- /page-settings -->
+
+</div><!-- /container -->
+
+<div id="toast"></div>
+
+<script>
+// ── Config ───────────────────────────────────────────────────
+let CONFIG = {
+  scriptUrl : "https://script.google.com/macros/s/AKfycbzrTk8WVbgPTyFtbIN9zoPm5xVWza5B8wkmbix-DYIXre_Kjv8iETT0sY_VVkWC3s4PDg/exec",
+  secret    : "",
+  redeemUrl : "",
+};
+let lastOfferId = "";
+
+function loadConfig() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("qrOfferConfig") || "{}");
+    CONFIG = { ...CONFIG, ...saved };
+    document.getElementById("s-url").value        = CONFIG.scriptUrl || "";
+    document.getElementById("s-secret").value     = CONFIG.secret    || "";
+    document.getElementById("s-redeem-url").value = CONFIG.redeemUrl || "";
+    if (CONFIG.scriptUrl) document.getElementById("config-warning").style.display = "none";
+  } catch(e) {}
+}
+
+function saveSettings() {
+  CONFIG.scriptUrl = document.getElementById("s-url").value.trim();
+  CONFIG.secret    = document.getElementById("s-secret").value.trim();
+  CONFIG.redeemUrl = document.getElementById("s-redeem-url").value.trim();
+  localStorage.setItem("qrOfferConfig", JSON.stringify(CONFIG));
+  if (CONFIG.scriptUrl) document.getElementById("config-warning").style.display = "none";
+  showToast("Settings saved!", "success");
+}
+
+async function testConnection() {
+  if (!CONFIG.scriptUrl) { showToast("Enter Apps Script URL first", "error"); return; }
+  try {
+    const r = await apiFetch({ action: "getAllOffers", secret: CONFIG.secret });
+    showToast(`Connected! ${r.offers?.length ?? 0} offers found.`, "success");
+  } catch(e) {
+    showToast("Connection failed: " + e.message, "error");
+  }
+}
+
+// ── API ──────────────────────────────────────────────────────
+async function apiFetch(params) {
+  const url = new URL(CONFIG.scriptUrl);
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  const res  = await fetch(url.toString());
+  const json = await res.json();
+  if (!json.success && json.error) throw new Error(json.error);
+  return json;
+}
+
+// ── Generate ─────────────────────────────────────────────────
+async function generateOffer() {
+  if (!CONFIG.scriptUrl || !CONFIG.secret) {
+    showToast("Configure settings first!", "error"); return;
+  }
+  const name  = document.getElementById("f-name").value.trim();
+  const title = document.getElementById("f-title").value.trim();
+  if (!name || !title) { showToast("Customer name and offer title are required.", "error"); return; }
+
+  const btn = document.getElementById("btn-generate");
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span> Creating…`;
+
+  try {
+    const expiresRaw = document.getElementById("f-expires").value;
+    const expiresAt  = expiresRaw ? new Date(expiresRaw).toISOString() : "";
+
+    const res = await apiFetch({
+      action     : "createOffer",
+      secret     : CONFIG.secret,
+      name,
+      email      : document.getElementById("f-email").value.trim(),
+      offerTitle : title,
+      offerDesc  : document.getElementById("f-desc").value.trim(),
+      discount   : document.getElementById("f-discount").value.trim(),
+      expiresAt,
+    });
+
+    lastOfferId = res.id;
+    renderQR(res.id, title);
+    showToast("Offer created & QR generated!", "success");
+  } catch(e) {
+    showToast("Error: " + e.message, "error");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = "✦ Generate QR Code";
+  }
+}
+
+function renderQR(id, title) {
+  const redeemUrl = (CONFIG.redeemUrl || window.location.origin + "/redeem.html") + "?id=" + id;
+
+  document.getElementById("qr-canvas").innerHTML = "";
+  new QRCode(document.getElementById("qr-canvas"), {
+    text   : redeemUrl,
+    width  : 180, height: 180,
+    colorDark : "#000000", colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.H,
+  });
+
+  document.getElementById("qr-offer-title").textContent = title;
+  document.getElementById("qr-offer-desc").textContent  =
+    "Offer ID: " + id.substring(0, 8) + "…";
+  document.getElementById("qr-offer-id").textContent    = redeemUrl;
+  document.getElementById("qr-result").style.display    = "block";
+  document.getElementById("qr-result").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function downloadQR() {
+  const canvas = document.querySelector("#qr-canvas canvas");
+  if (!canvas) return;
+  const link   = document.createElement("a");
+  link.download = "offer-qr-" + lastOfferId.substring(0,8) + ".png";
+  link.href     = canvas.toDataURL();
+  link.click();
+}
+
+function copyLink() {
+  const url = document.getElementById("qr-offer-id").textContent;
+  navigator.clipboard.writeText(url).then(() => showToast("Link copied!", "success"));
+}
+
+function openVerifyPage() {
+  window.open("verify.html?id=" + lastOfferId, "_blank");
+}
+
+// ── Offers list ──────────────────────────────────────────────
+async function loadOffers() {
+  if (!CONFIG.scriptUrl || !CONFIG.secret) {
+    showToast("Configure settings first!", "error"); return;
+  }
+  const tbody = document.getElementById("offers-table-body");
+  tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><span class="spinner"></span></div></td></tr>`;
+
+  try {
+    const res = await apiFetch({ action: "getAllOffers", secret: CONFIG.secret });
+    const offers = res.offers || [];
+
+    const counts = { total: offers.length, active: 0, redeemed: 0, expired: 0 };
+    offers.forEach(o => { if (counts[o.status] !== undefined) counts[o.status]++; });
+
+    document.getElementById("stat-total").textContent    = counts.total;
+    document.getElementById("stat-active").textContent   = counts.active;
+    document.getElementById("stat-redeemed").textContent = counts.redeemed;
+    document.getElementById("stat-expired").textContent  = counts.expired;
+
+    if (!offers.length) {
+      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="icon">📭</div><p>No offers yet. Generate one!</p></div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = offers.map(o => `
+      <tr>
+        <td><div class="id-cell" title="${o.id}">${o.id}</div></td>
+        <td>${esc(o.name)}</td>
+        <td>${esc(o.offerTitle)}</td>
+        <td>${esc(o.discount)}</td>
+        <td><span class="badge badge-${o.status}">${o.status}</span></td>
+        <td>${fmtDate(o.createdAt)}</td>
+        <td>${o.redeemedAt ? fmtDate(o.redeemedAt) : "—"}</td>
+        <td>
+          <button class="btn btn-secondary btn-sm" onclick="qrPopup('${o.id}','${esc(o.offerTitle)}')">QR</button>
+          ${o.status === "active"
+            ? `<button class="btn btn-danger btn-sm" onclick="expireOffer('${o.id}')">Expire</button>`
+            : ""}
+        </td>
+      </tr>
+    `).join("");
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="8" style="color:var(--red);text-align:center;padding:24px;">Error: ${e.message}</td></tr>`;
+  }
+}
+
+async function expireOffer(id) {
+  if (!confirm("Mark this offer as expired?")) return;
+  try {
+    await apiFetch({ action: "expireOffer", secret: CONFIG.secret, id });
+    showToast("Offer expired.", "success");
+    loadOffers();
+  } catch(e) { showToast(e.message, "error"); }
+}
+
+function qrPopup(id, title) {
+  const redeemUrl = (CONFIG.redeemUrl || window.location.origin + "/redeem.html") + "?id=" + id;
+  const win = window.open("", "_blank", "width=320,height=400");
+  win.document.write(`
+    <html><head><title>QR — ${title}</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
+    </head><body style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#fff;font-family:sans-serif;gap:16px;">
+    <h3 style="text-align:center;max-width:260px;">${title}</h3>
+    <div id="qr"></div>
+    <p style="font-size:.7rem;color:#666;word-break:break-all;max-width:280px;text-align:center;">${id}</p>
+    <script>new QRCode(document.getElementById('qr'),{text:'${redeemUrl}',width:220,height:220});<\/script>
+    </body></html>
+  `);
+}
+
+// ── Nav ──────────────────────────────────────────────────────
+function showPage(name, el) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".nav-links a").forEach(a => a.classList.remove("active"));
+  document.getElementById("page-" + name).classList.add("active");
+  el.classList.add("active");
+  if (name === "offers") loadOffers();
+}
+
+// ── Utilities ─────────────────────────────────────────────────
+function showToast(msg, type = "success") {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className   = "show " + type;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.className = "", 3000);
+}
+
+function esc(str) {
+  return String(str || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+function fmtDate(iso) {
+  if (!iso) return "—";
+  try { return new Date(iso).toLocaleString("en-IN", { dateStyle:"medium", timeStyle:"short" }); }
+  catch { return iso; }
+}
+
+function toggleSecret() {
+  const inp = document.getElementById("s-secret");
+  inp.type = inp.type === "password" ? "text" : "password";
+}
+
+// ── Init ─────────────────────────────────────────────────────
+loadConfig();
+</script>
+</body>
+</html>
